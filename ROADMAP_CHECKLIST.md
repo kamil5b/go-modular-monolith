@@ -4,10 +4,10 @@
 - [x] Product CRUD: HTTP Echo → v1 → SQL repository
 - [x] SQL & MongoDB repository support with migrations
 - [x] Gin framework integration
-- [ ] User CRUD implementation
+- [x] Utilize Request & Response models
+- [x] User CRUD implementation
 - [ ] Authentication system
 - [ ] Middleware integration
-- [ ] Utilize Request & Response models
 - [ ] Unit Test
 - [ ] Redis integration
 - [ ] Worker support: Asynq, RabbitMQ, Redpanda

@@ -2,6 +2,7 @@ package core
 
 import (
 	"go-modular-monolith/internal/domain/product"
+	"go-modular-monolith/internal/domain/user"
 
 	repoMongo "go-modular-monolith/internal/modules/product/repository/mongo"
 	repoSQL "go-modular-monolith/internal/modules/product/repository/sql"
@@ -12,6 +13,10 @@ import (
 	handlerUnimplemented "go-modular-monolith/internal/modules/product/handler/noop"
 	handlerV1 "go-modular-monolith/internal/modules/product/handler/v1"
 
+	handlerV1User "go-modular-monolith/internal/modules/user/handler/v1"
+	repoSQLUser "go-modular-monolith/internal/modules/user/repository/sql"
+	serviceV1User "go-modular-monolith/internal/modules/user/service/v1"
+
 	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -20,6 +25,9 @@ type Container struct {
 	ProductRepository product.ProductRepository
 	ProductService    product.ProductService
 	ProductHandler    product.ProductHandler
+	UserRepository    user.UserRepository
+	UserService       user.UserService
+	UserHandler       user.UserHandler
 }
 
 func NewContainer(
@@ -31,6 +39,9 @@ func NewContainer(
 		productRepository product.ProductRepository
 		productService    product.ProductService
 		productHandler    product.ProductHandler
+		userRepository    user.UserRepository
+		userService       user.UserService
+		userHandler       user.UserHandler
 	)
 
 	// repo
@@ -59,8 +70,32 @@ func NewContainer(
 		productHandler = handlerUnimplemented.NewUnimplementedHandler()
 	}
 
+	// user repo
+	switch featureFlag.Repository.User {
+	case "postgres":
+		userRepository = repoSQLUser.NewSQLRepository(db)
+	default:
+	}
+
+	// user service
+	switch featureFlag.Service.User {
+	case "v1":
+		userService = serviceV1User.NewServiceV1(userRepository)
+	default:
+	}
+
+	// user handler
+	switch featureFlag.Handler.User {
+	case "v1":
+		userHandler = handlerV1User.NewHandler(userService)
+	default:
+	}
+
 	return &Container{
 		ProductService: productService,
 		ProductHandler: productHandler,
+		UserRepository: userRepository,
+		UserService:    userService,
+		UserHandler:    userHandler,
 	}
 }

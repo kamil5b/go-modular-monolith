@@ -9,16 +9,19 @@ import (
 type HandlerFeatureFlag struct {
 	Authentication string `yaml:"authentication"` // disable, v1
 	Product        string `yaml:"product"`        // disable, v1
+	User           string `yaml:"user"`           // disable, v1
 }
 
 type ServiceFeatureFlag struct {
 	Authentication string `yaml:"authentication"` // disable, v1
 	Product        string `yaml:"product"`        // disable, v1
+	User           string `yaml:"user"`           // disable, v1
 }
 
 type RepositoryFeatureFlag struct {
 	Authentication string `yaml:"authentication"` // disable, postgres, mongo
 	Product        string `yaml:"product"`        // disable, postgres, mongo
+	User           string `yaml:"user"`           // disable, postgres, mongo
 }
 
 type FeatureFlag struct {
