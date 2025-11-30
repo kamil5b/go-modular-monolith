@@ -2,6 +2,7 @@ package http
 
 import (
 	"go-modular-monolith/internal/app/core"
+	"go-modular-monolith/internal/domain/product"
 
 	transportEcho "go-modular-monolith/internal/transports/http/echo"
 
@@ -19,7 +20,9 @@ func NewEchoServer(c *core.Container) *echo.Echo {
 		c.ProductHandler,
 	)
 	for _, route := range *routes {
-		v1 = transportEcho.AppRoutesToEchoRoutes(v1, &route).Group("")
+		v1 = transportEcho.AppRoutesToEchoRoutes(v1, &route, func(c echo.Context) product.Context {
+			return transportEcho.NewEchoContext(c)
+		}).Group("")
 	}
 	return e
 }

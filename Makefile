@@ -9,8 +9,8 @@ install-goose:
 # Run Postgres migrations (goose folder)
 migrate-up:
 	if [ -z "$(DATABASE_URL)" ]; then echo "Set DATABASE_URL env var"; exit 1; fi
-	goose -dir migrations/goose postgres "$(DATABASE_URL)" up
+	goose -dir internal/infrastructure/db/sql/migration postgres "$(DATABASE_URL)" up
 
 migrate-down:
 	if [ -z "$(DATABASE_URL)" ]; then echo "Set DATABASE_URL env var"; exit 1; fi
-	goose -dir migrations/goose postgres "$(DATABASE_URL)" down
+	goose -dir internal/infrastructure/db/sql/migration postgres "$(DATABASE_URL)" down

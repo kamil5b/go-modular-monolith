@@ -1,6 +1,7 @@
-package main
+package bootstrap
 
 import (
+	"errors"
 	"fmt"
 	"go-modular-monolith/internal/app/core"
 	appHttp "go-modular-monolith/internal/app/http"
@@ -8,48 +9,59 @@ import (
 	infraSQL "go-modular-monolith/internal/infrastructure/db/sql"
 )
 
-func main() {
+func RunServer() error {
 	cfg, err := core.LoadConfig("config/config.yaml")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	featureFlag, err := core.LoadFeatureFlags("config/featureflags.yaml")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	db, err := infraSQL.Open(cfg.App.Database.SQL.DBUrl)
 	if err != nil {
 		if featureFlag.Repository.Product == "postgres" {
-			panic(err)
+			return err
 		}
 		fmt.Println("[ERROR] Postgres not loaded:", err)
 	}
+	defer func() {
+		if db != nil {
+			db.Close()
+		}
+	}()
 
 	mongo, err := infraMongo.OpenMongo(cfg.App.Database.Mongo.MongoURL)
 	if err != nil {
 		if featureFlag.Repository.Product == "mongo" {
-			panic(err)
+			return err
 		}
 		fmt.Println("[ERROR] MongoDB not loaded:", err)
 	}
+	defer func() {
+		if mongo != nil {
+			infraMongo.CloseMongo(mongo)
+		}
+	}()
 
 	container := core.NewContainer(*featureFlag, db, mongo)
 	if container == nil {
-		panic("failed to create container")
+		return errors.New("failed to create container")
 	}
 
 	switch featureFlag.HTTPHandler {
 	case "echo":
 		server := appHttp.NewEchoServer(container)
 		if err := server.Start(":" + cfg.App.Server.Port); err != nil {
-			panic(err)
+			return err
 		}
 	default:
 		server := appHttp.NewEchoServer(container)
 		if err := server.Start(":" + cfg.App.Server.Port); err != nil {
-			panic(err)
+			return err
 		}
 	}
+	return nil
 
 }
