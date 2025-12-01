@@ -45,7 +45,7 @@ func RunServer() error {
 		}
 	}()
 
-	container := core.NewContainer(*featureFlag, db, mongo)
+	container := core.NewContainer(*featureFlag, cfg, db, mongo)
 	if container == nil {
 		return errors.New("failed to create container")
 	}

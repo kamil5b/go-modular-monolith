@@ -1,0 +1,79 @@
+package noop
+
+import (
+	"context"
+	"errors"
+	"go-modular-monolith/internal/domain/auth"
+)
+
+var ErrNotImplemented = errors.New("auth service not implemented")
+
+type NoopService struct{}
+
+func NewNoopService() *NoopService {
+	return &NoopService{}
+}
+
+func (s *NoopService) Login(ctx context.Context, req *auth.LoginRequest, userAgent, ipAddress string) (*auth.LoginResponse, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) Register(ctx context.Context, req *auth.RegisterRequest) (*auth.RegisterResponse, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) Logout(ctx context.Context, userID string, req *auth.LogoutRequest) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) RefreshToken(ctx context.Context, refreshToken string) (*auth.RefreshTokenResponse, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) ValidateToken(ctx context.Context, token string) (*auth.ValidateTokenResponse, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) ChangePassword(ctx context.Context, userID string, req *auth.ChangePasswordRequest) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) ResetPassword(ctx context.Context, req *auth.ResetPasswordRequest) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) ConfirmResetPassword(ctx context.Context, req *auth.ConfirmResetPasswordRequest) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) GetSessions(ctx context.Context, userID string) (*auth.SessionListResponse, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) RevokeSession(ctx context.Context, userID, sessionID string) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) RevokeAllSessions(ctx context.Context, userID string) error {
+	return ErrNotImplemented
+}
+
+func (s *NoopService) GenerateAccessToken(claims *auth.TokenClaims) (string, error) {
+	return "", ErrNotImplemented
+}
+
+func (s *NoopService) GenerateRefreshToken(userID string) (string, error) {
+	return "", ErrNotImplemented
+}
+
+func (s *NoopService) ParseToken(token string) (*auth.TokenClaims, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *NoopService) HashPassword(password string) (string, error) {
+	return "", ErrNotImplemented
+}
+
+func (s *NoopService) VerifyPassword(hashedPassword, password string) error {
+	return ErrNotImplemented
+}

@@ -14,3 +14,10 @@ app:
 
   jwt:
     secret: "supersecretkey"
+    access_token_duration: "15m"
+    refresh_token_duration: "168h"
+
+  auth:
+    type: "jwt"  # jwt, session, basic, none
+    session_cookie: "session_token"
+    bcrypt_cost: 10

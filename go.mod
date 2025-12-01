@@ -11,7 +11,6 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.11.0
 	github.com/rs/zerolog v1.34.0
-	github.com/sirupsen/logrus v1.9.3
 	go.mongodb.org/mongo-driver v1.17.6
 	golang.org/x/crypto v0.40.0
 	gopkg.in/yaml.v3 v3.0.1

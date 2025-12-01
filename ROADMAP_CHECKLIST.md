@@ -6,8 +6,8 @@
 - [x] Gin framework integration
 - [x] Utilize Request & Response models
 - [x] User CRUD implementation
-- [ ] Authentication system
-- [ ] Middleware integration
+- [x] Authentication system: JWT, Basic Auth, Session-based (untested)
+- [x] Middleware integration (untested)
 - [ ] Unit Test
 - [ ] Redis integration
 - [ ] Worker support: Asynq, RabbitMQ, Redpanda

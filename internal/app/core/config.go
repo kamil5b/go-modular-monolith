@@ -26,13 +26,22 @@ type MongoConfig struct {
 }
 
 type JWTConfig struct {
-	Secret string `yaml:"secret"`
+	Secret               string `yaml:"secret"`
+	AccessTokenDuration  string `yaml:"access_token_duration"`
+	RefreshTokenDuration string `yaml:"refresh_token_duration"`
+}
+
+type AuthConfig struct {
+	Type          string `yaml:"type"`           // jwt, session, basic, none
+	SessionCookie string `yaml:"session_cookie"` // cookie name for session-based auth
+	BcryptCost    int    `yaml:"bcrypt_cost"`    // bcrypt cost for password hashing
 }
 
 type AppConfig struct {
 	Server   ServerConfig   `yaml:"server"`
 	Database DatabaseConfig `yaml:"database"`
 	JWT      JWTConfig      `yaml:"jwt"`
+	Auth     AuthConfig     `yaml:"auth"`
 }
 
 type Config struct {
