@@ -1,4 +1,4 @@
-.PHONY: run server test test-unit test-internal lint migrate deps-check mocks-gen clean-mocks mock
+.PHONY: run server worker test test-unit test-internal lint migrate deps-check mocks-gen clean-mocks mock
 
 # Run the application
 run:
@@ -7,6 +7,9 @@ run:
 # Run server only (skip migrations)
 server:
 	go run . server
+
+worker:
+	go run . worker
 
 # Run all tests
 test:
