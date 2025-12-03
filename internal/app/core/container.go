@@ -3,8 +3,19 @@ package core
 import (
 	// Shared packages
 	"go-modular-monolith/internal/shared/cache"
+	"go-modular-monolith/internal/shared/email"
 	"go-modular-monolith/internal/shared/events"
 	"go-modular-monolith/internal/shared/uow"
+
+	// Worker infrastructure
+	"go-modular-monolith/internal/infrastructure/worker"
+	asynqworker "go-modular-monolith/internal/infrastructure/worker/asynq"
+	rabbitmqworker "go-modular-monolith/internal/infrastructure/worker/rabbitmq"
+	redpandaworker "go-modular-monolith/internal/infrastructure/worker/redpanda"
+
+	// Email infrastructure
+	"go-modular-monolith/internal/infrastructure/email/mailgun"
+	"go-modular-monolith/internal/infrastructure/email/smtp"
 
 	// Product module
 	productDomain "go-modular-monolith/internal/modules/product/domain"
@@ -50,6 +61,9 @@ type Container struct {
 	// Event Bus (shared)
 	EventBus events.EventBus
 
+	// Email Service (shared)
+	EmailClient email.EmailService
+
 	// Product module
 	ProductRepository productDomain.Repository
 	ProductService    productDomain.Service
@@ -65,6 +79,10 @@ type Container struct {
 	AuthService    authDomain.Service
 	AuthHandler    authDomain.Handler
 	AuthMiddleware *middleware.AuthMiddleware
+
+	// Worker (infrastructure)
+	WorkerClient worker.Client
+	WorkerServer worker.Server
 }
 
 func NewContainer(
@@ -119,6 +137,34 @@ func NewContainer(
 	// Initialize event bus (shared across all modules)
 	eventBus := events.NewInMemoryEventBus()
 
+	// Initialize email service (before modules that depend on it)
+	var emailService email.EmailService
+	if featureFlag.Email.Enabled && featureFlag.Email.Provider != "noop" && config != nil {
+		switch featureFlag.Email.Provider {
+		case "smtp":
+			emailService = smtp.NewSMTPEmailService(smtp.SMTPConfig{
+				Host:     config.App.Email.SMTP.Host,
+				Port:     config.App.Email.SMTP.Port,
+				Username: config.App.Email.SMTP.Username,
+				Password: config.App.Email.SMTP.Password,
+				FromAddr: config.App.Email.SMTP.FromAddr,
+				FromName: config.App.Email.SMTP.FromName,
+			})
+		case "mailgun":
+			emailService = mailgun.NewMailgunEmailService(mailgun.MailgunConfig{
+				Domain:   config.App.Email.Mailgun.Domain,
+				APIKey:   config.App.Email.Mailgun.APIKey,
+				FromAddr: config.App.Email.Mailgun.FromAddr,
+				FromName: config.App.Email.Mailgun.FromName,
+			})
+		default:
+			emailService = email.NewNoOpEmailService()
+		}
+	} else {
+		// Use no-op implementation when email is disabled or provider is noop
+		emailService = email.NewNoOpEmailService()
+	}
+
 	// repo
 	switch featureFlag.Repository.Product {
 	case "mongo":
@@ -158,7 +204,7 @@ func NewContainer(
 	// user service
 	switch featureFlag.Service.User {
 	case "v1":
-		userService = serviceV1User.NewServiceV1(userRepository, eventBus)
+		userService = serviceV1User.NewServiceV1(userRepository, eventBus, emailService)
 	default:
 	}
 
@@ -211,9 +257,72 @@ func NewContainer(
 	}
 	authMiddleware = middleware.NewAuthMiddleware(authService, middlewareConfig)
 
+	// Initialize worker client and server
+	var workerClient worker.Client
+	var workerServer worker.Server
+
+	if featureFlag.Worker.Enabled && featureFlag.Worker.Backend != "disable" && config != nil {
+		// Initialize worker client
+		switch featureFlag.Worker.Backend {
+		case "asynq":
+			workerClient = asynqworker.NewAsynqClient(config.App.Worker.Asynq.RedisURL)
+		case "rabbitmq":
+			if client, err := rabbitmqworker.NewRabbitMQClient(
+				config.App.Worker.RabbitMQ.URL,
+				config.App.Worker.RabbitMQ.Exchange,
+				config.App.Worker.RabbitMQ.Queue,
+			); err == nil {
+				workerClient = client
+			} else {
+				workerClient = worker.NewNoOpClient()
+			}
+		case "redpanda":
+			workerClient = redpandaworker.NewRedpandaClient(
+				config.App.Worker.Redpanda.Brokers,
+				config.App.Worker.Redpanda.Topic,
+			)
+		default:
+			workerClient = worker.NewNoOpClient()
+		}
+
+		// Initialize worker server
+		switch featureFlag.Worker.Backend {
+		case "asynq":
+			workerServer = asynqworker.NewAsynqServer(
+				config.App.Worker.Asynq.RedisURL,
+				config.App.Worker.Asynq.Concurrency,
+			)
+		case "rabbitmq":
+			if server, err := rabbitmqworker.NewRabbitMQServer(
+				config.App.Worker.RabbitMQ.URL,
+				config.App.Worker.RabbitMQ.Exchange,
+				config.App.Worker.RabbitMQ.Queue,
+				config.App.Worker.RabbitMQ.PrefetchCount,
+			); err == nil {
+				workerServer = server
+			} else {
+				workerServer = worker.NewNoOpServer()
+			}
+		case "redpanda":
+			workerServer = redpandaworker.NewRedpandaServer(
+				config.App.Worker.Redpanda.Brokers,
+				config.App.Worker.Redpanda.Topic,
+				config.App.Worker.Redpanda.ConsumerGroup,
+				config.App.Worker.Redpanda.WorkerCount,
+			)
+		default:
+			workerServer = worker.NewNoOpServer()
+		}
+	} else {
+		// Use no-op implementations when workers are disabled
+		workerClient = worker.NewNoOpClient()
+		workerServer = worker.NewNoOpServer()
+	}
+
 	return &Container{
 		Cache:             cacheInstance,
 		EventBus:          eventBus,
+		EmailClient:       emailService,
 		ProductRepository: productRepository,
 		ProductService:    productService,
 		ProductHandler:    productHandler,
@@ -224,5 +333,7 @@ func NewContainer(
 		AuthService:       authService,
 		AuthHandler:       authHandler,
 		AuthMiddleware:    authMiddleware,
+		WorkerClient:      workerClient,
+		WorkerServer:      workerServer,
 	}
 }

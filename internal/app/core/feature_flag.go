@@ -24,6 +24,24 @@ type RepositoryFeatureFlag struct {
 	User           string `yaml:"user"`           // disable, postgres, mongo
 }
 
+type WorkerTaskFeatureFlag struct {
+	EmailNotifications bool `yaml:"email_notifications"`
+	DataExport         bool `yaml:"data_export"`
+	ReportGeneration   bool `yaml:"report_generation"`
+	ImageProcessing    bool `yaml:"image_processing"`
+}
+
+type WorkerFeatureFlag struct {
+	Enabled bool                  `yaml:"enabled"`
+	Backend string                `yaml:"backend"` // asynq, rabbitmq, redpanda, disable
+	Tasks   WorkerTaskFeatureFlag `yaml:"tasks"`
+}
+
+type EmailFeatureFlag struct {
+	Enabled  bool   `yaml:"enabled"`
+	Provider string `yaml:"provider"` // smtp, mailgun, noop
+}
+
 type FeatureFlag struct {
 	HTTPHandler string `yaml:"http_handler"` // echo, gin
 	Cache       string `yaml:"cache"`        // redis, memory, disable
@@ -31,6 +49,8 @@ type FeatureFlag struct {
 	Handler    HandlerFeatureFlag    `yaml:"handler"`
 	Service    ServiceFeatureFlag    `yaml:"service"`
 	Repository RepositoryFeatureFlag `yaml:"repository"`
+	Worker     WorkerFeatureFlag     `yaml:"worker"`
+	Email      EmailFeatureFlag      `yaml:"email"`
 }
 
 // LoadFeatureFlags loads feature flag configuration from a YAML file.

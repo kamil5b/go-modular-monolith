@@ -27,6 +27,10 @@ func main() {
 		if err := bootstrap.RunServer(); err != nil {
 			log.Fatalf("server failed: %v", err)
 		}
+	case "worker":
+		if err := bootstrap.RunWorker(); err != nil {
+			log.Fatalf("worker failed: %v", err)
+		}
 	case "migration":
 		if len(args) < 3 {
 			log.Fatalf("usage: go run . migration <sql|mongo> up|down")

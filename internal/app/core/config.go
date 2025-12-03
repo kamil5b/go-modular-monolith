@@ -47,12 +47,70 @@ type AuthConfig struct {
 	BcryptCost    int    `yaml:"bcrypt_cost"`    // bcrypt cost for password hashing
 }
 
+type AsynqWorkerConfig struct {
+	RedisURL       string `yaml:"redis_url"`
+	Concurrency    int    `yaml:"concurrency"`
+	MaxRetries     int    `yaml:"max_retries"`
+	DefaultTimeout string `yaml:"default_timeout"`
+}
+
+type RabbitMQWorkerConfig struct {
+	URL           string `yaml:"url"`
+	Exchange      string `yaml:"exchange"`
+	Queue         string `yaml:"queue"`
+	WorkerCount   int    `yaml:"worker_count"`
+	PrefetchCount int    `yaml:"prefetch_count"`
+}
+
+type RedpandaWorkerConfig struct {
+	Brokers           []string `yaml:"brokers"`
+	Topic             string   `yaml:"topic"`
+	ConsumerGroup     string   `yaml:"consumer_group"`
+	PartitionCount    int      `yaml:"partition_count"`
+	ReplicationFactor int      `yaml:"replication_factor"`
+	WorkerCount       int      `yaml:"worker_count"`
+}
+
+type WorkerConfig struct {
+	Enabled  bool                 `yaml:"enabled"`
+	Backend  string               `yaml:"backend"` // asynq, rabbitmq, redpanda, disable
+	Asynq    AsynqWorkerConfig    `yaml:"asynq"`
+	RabbitMQ RabbitMQWorkerConfig `yaml:"rabbitmq"`
+	Redpanda RedpandaWorkerConfig `yaml:"redpanda"`
+}
+
+type SMTPConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	FromAddr string `yaml:"from_addr"`
+	FromName string `yaml:"from_name"`
+}
+
+type MailgunConfig struct {
+	Domain    string `yaml:"domain"`
+	APIKey    string `yaml:"api_key"`
+	FromAddr  string `yaml:"from_addr"`
+	FromName  string `yaml:"from_name"`
+	PublicKey string `yaml:"public_key"`
+}
+
+type EmailConfig struct {
+	Enabled  bool          `yaml:"enabled"`
+	Provider string        `yaml:"provider"` // smtp, mailgun, noop
+	SMTP     SMTPConfig    `yaml:"smtp"`
+	Mailgun  MailgunConfig `yaml:"mailgun"`
+}
+
 type AppConfig struct {
 	Server   ServerConfig   `yaml:"server"`
 	Database DatabaseConfig `yaml:"database"`
 	Redis    RedisConfig    `yaml:"redis"`
 	JWT      JWTConfig      `yaml:"jwt"`
 	Auth     AuthConfig     `yaml:"auth"`
+	Worker   WorkerConfig   `yaml:"worker"`
+	Email    EmailConfig    `yaml:"email"`
 }
 
 type Config struct {

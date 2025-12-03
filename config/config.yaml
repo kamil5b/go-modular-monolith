@@ -30,3 +30,52 @@ app:
     type: "jwt"  # jwt, session, basic, none
     session_cookie: "session_token"
     bcrypt_cost: 10
+
+  worker:
+    enabled: false
+    backend: "asynq"  # asynq, rabbitmq, redpanda, disable
+
+    # Asynq configuration
+    asynq:
+      redis_url: "redis://localhost:6379"
+      concurrency: 10
+      max_retries: 3
+      default_timeout: "300s"
+
+    # RabbitMQ configuration
+    rabbitmq:
+      url: "amqp://guest:guest@localhost:5672/"
+      exchange: "tasks"
+      queue: "tasks_queue"
+      worker_count: 10
+      prefetch_count: 1
+
+    # Redpanda/Kafka configuration
+    redpanda:
+      brokers:
+        - "localhost:9092"
+      topic: "tasks"
+      consumer_group: "workers"
+      partition_count: 3
+      replication_factor: 1
+      worker_count: 10
+
+  email:
+    enabled: false
+    provider: "noop"  # smtp, mailgun, noop
+
+    # SMTP configuration
+    smtp:
+      host: "smtp.gmail.com"
+      port: 587
+      username: "your-email@gmail.com"
+      password: "your-app-password"
+      from_addr: "noreply@example.com"
+      from_name: "MyApp"
+
+    # Mailgun configuration
+    mailgun:
+      domain: "mg.example.com"
+      api_key: "key-xxxx"
+      from_addr: "noreply@example.com"
+      from_name: "MyApp"

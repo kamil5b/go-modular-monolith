@@ -15,6 +15,12 @@ type Handler interface {
 	Delete(c sharedctx.Context) error
 }
 
+// EmailSender defines the interface for sending user-related emails
+type EmailSender interface {
+	SendWelcomeEmail(ctx context.Context, userEmail, userName string) error
+	SendPasswordResetEmail(ctx context.Context, userEmail, resetLink string) error
+}
+
 // Service defines the interface for user business logic
 type Service interface {
 	Create(ctx context.Context, req *CreateUserRequest, createdBy string) (*User, error)

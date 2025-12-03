@@ -11,11 +11,14 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/hibiken/asynq v0.25.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.11.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.17.2
+	github.com/segmentio/kafka-go v0.4.49
 	github.com/stretchr/testify v1.11.1
 	github.com/valyala/fasthttp v1.68.0
 	go.mongodb.org/mongo-driver v1.17.6
@@ -33,6 +36,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
@@ -43,6 +47,8 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/mailgun/errors v0.4.0 // indirect
+	github.com/mailgun/mailgun-go/v4 v4.23.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -50,11 +56,14 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/savsgio/gotils v0.0.0-20240704082632-aef3928b8a38 // indirect
+	github.com/spf13/cast v1.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

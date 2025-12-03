@@ -16,3 +16,16 @@ repository:
   authentication: postgres
   product: postgres
   user: postgres
+
+worker:
+  enabled: false
+  backend: disable  # asynq, rabbitmq, redpanda, disable
+  tasks:
+    email_notifications: false
+    data_export: false
+    report_generation: false
+    image_processing: false
+
+email:
+  enabled: false
+  provider: noop  # smtp, mailgun, noop

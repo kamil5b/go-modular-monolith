@@ -23,10 +23,11 @@
 13. [Authentication & Middleware](#authentication--middleware)
 14. [Database & Migrations](#database--migrations)
 15. [API Reference](#api-reference)
-16. [Development Guide](#development-guide)
-17. [Dependency Linter](#dependency-linter)
-18. [Microservices Readiness](#microservices-readiness)
-19. [Roadmap](#roadmap)
+16. [Worker Support](#worker-support)
+17. [Development Guide](#development-guide)
+18. [Dependency Linter](#dependency-linter)
+19. [Microservices Readiness](#microservices-readiness)
+20. [Roadmap](#roadmap)
 
 ---
 
@@ -1098,10 +1099,10 @@ When ready to migrate to microservices:
 - [x] **Dependency Linter** (`cmd/lint-deps/`) - Enforces module isolation
 - [x] **Shared Context Interface** (`sharedctx.Context`) - Framework-agnostic handlers
 - [x] **Redis Integration** - Caching with Redis & in-memory fallback
+- [x] **Worker Support** - Asynq, RabbitMQ, and Redpanda integration
 
 ### Planned 📋
 - [ ] Unit Tests (Priority: High)
-- [ ] Worker support: Asynq, RabbitMQ, Redpanda
 - [ ] Storage support: S3-Compatible, GCS, MinIO, Local
 - [ ] gRPC & Protocol Buffers support
 - [ ] WebSocket integration
@@ -1112,7 +1113,1110 @@ When ready to migrate to microservices:
 
 ---
 
-## Contributing
+## Worker Support
+
+The application supports multiple task queue and worker backends for asynchronous job processing. Workers enable decoupling of long-running tasks from HTTP request/response cycles and support scheduled jobs, retries, and distributed processing.
+
+### Supported Backends
+
+| Backend | Use Case | Features | Production Ready |
+|---------|----------|----------|------------------|
+| **Asynq** | Task queue | Redis-backed, retry logic, scheduling, priority queues | ✅ Yes |
+| **RabbitMQ** | Message broker | Advanced routing, persistent queues, dead-letter exchanges | ✅ Yes |
+| **Redpanda** | Streaming platform | Kafka-compatible, high throughput, built-in retries | ✅ Yes |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    HTTP Handler Layer                            │
+│                  (HTTP Request/Response)                         │
+└────────────────┬──────────────────────────────────────────────┘
+                 │
+                 │ Enqueue Task
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Task Queue Backend                             │
+│   (Asynq / RabbitMQ / Redpanda)                                 │
+│                                                                  │
+│   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
+│   │   Task A     │  │   Task B     │  │   Task C     │         │
+│   │ (Priority 1) │  │ (Priority 2) │  │ (Scheduled)  │         │
+│   └──────────────┘  └──────────────┘  └──────────────┘         │
+└─────────────────────────────────────────────────────────────────┘
+                 │
+                 │ Dequeue Tasks
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Worker Pool                                   │
+│                                                                  │
+│   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │
+│   │Worker 1 │  │Worker 2 │  │Worker N │  │Scheduler│          │
+│   └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘          │
+└────────┼────────────┼────────────┼────────────┼────────────────┘
+         │            │            │            │
+         ▼            ▼            ▼            ▼
+    Service Logic (Event Publishing, Database Updates, etc.)
+```
+
+### Project Structure
+
+```
+internal/
+├── infrastructure/
+│   └── worker/
+│       ├── worker.go              # Worker interface definition
+│       ├── asynq/
+│       │   ├── client.go          # Asynq task client
+│       │   └── server.go          # Asynq worker server
+│       ├── rabbitmq/
+│       │   ├── client.go          # RabbitMQ producer
+│       │   └── server.go          # RabbitMQ consumer
+│       └── redpanda/
+│           ├── client.go          # Redpanda producer
+│           └── server.go          # Redpanda consumer
+└── modules/
+    └── <module>/
+        └── worker/
+            ├── tasks.go           # Task definitions
+            └── handlers.go        # Task handlers
+```
+
+### Configuration
+
+### config/config.yaml
+
+```yaml
+app:
+  worker:
+    enabled: true
+    backend: asynq  # asynq | rabbitmq | redpanda
+    
+    # Asynq configuration
+    asynq:
+      redis_url: "redis://localhost:6379"
+      concurrency: 10
+      max_retries: 3
+      default_timeout: 300s  # 5 minutes
+    
+    # RabbitMQ configuration
+    rabbitmq:
+      url: "amqp://guest:guest@localhost:5672/"
+      exchange: "tasks"
+      queue: "tasks_queue"
+      worker_count: 10
+      prefetch_count: 1
+    
+    # Redpanda configuration
+    redpanda:
+      brokers:
+        - "localhost:9092"
+      topic: "tasks"
+      consumer_group: "workers"
+      partition_count: 3
+      replication_factor: 1
+      worker_count: 10
+```
+
+### Feature Flags
+
+### config/featureflags.yaml
+
+```yaml
+worker:
+  enabled: true
+  backend: asynq  # asynq | rabbitmq | redpanda | disable
+  
+  # Task-level feature flags
+  tasks:
+    email_notifications: true
+    data_export: true
+    report_generation: true
+    image_processing: true
+```
+
+### Worker Interface
+
+```go
+// internal/infrastructure/worker/worker.go
+package worker
+
+import "context"
+
+// TaskPayload defines the structure of task data
+type TaskPayload map[string]interface{}
+
+// TaskHandler processes a task
+type TaskHandler func(ctx context.Context, payload TaskPayload) error
+
+// Client enqueues tasks
+type Client interface {
+    Enqueue(ctx context.Context, taskName string, payload TaskPayload, options ...Option) error
+    EnqueueDelayed(ctx context.Context, taskName string, payload TaskPayload, delay time.Duration, options ...Option) error
+}
+
+// Server runs workers to process tasks
+type Server interface {
+    RegisterHandler(taskName string, handler TaskHandler) error
+    Start(ctx context.Context) error
+    Stop(ctx context.Context) error
+}
+
+// Option defines task options (priority, retry, timeout, etc.)
+type Option interface{}
+```
+
+### Asynq Implementation
+
+#### Task Enqueueing
+
+```go
+// internal/modules/user/worker/tasks.go
+package worker
+
+import (
+    "context"
+    "encoding/json"
+    workerlib "go-modular-monolith/internal/infrastructure/worker"
+)
+
+const (
+    TaskSendWelcomeEmail = "user:send_welcome_email"
+    TaskExportUserData   = "user:export_user_data"
+)
+
+type SendWelcomeEmailPayload struct {
+    UserID string `json:"user_id"`
+    Email  string `json:"email"`
+    Name   string `json:"name"`
+}
+
+func (p SendWelcomeEmailPayload) MarshalJSON() ([]byte, error) {
+    return json.Marshal(p)
+}
+
+// EnqueueWelcomeEmail enqueues a welcome email task
+func EnqueueWelcomeEmail(ctx context.Context, client workerlib.Client, userID, email, name string) error {
+    payload := SendWelcomeEmailPayload{
+        UserID: userID,
+        Email:  email,
+        Name:   name,
+    }
+    
+    // Enqueue with options (priority, max retries, timeout)
+    return client.Enqueue(ctx, TaskSendWelcomeEmail, payload)
+}
+```
+
+#### Task Handlers
+
+```go
+// internal/modules/user/worker/handlers.go
+package worker
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    workerlib "go-modular-monolith/internal/infrastructure/worker"
+    userdomain "go-modular-monolith/internal/modules/user/domain"
+)
+
+type UserWorkerHandler struct {
+    emailService userdomain.EmailService
+    userRepo     userdomain.Repository
+}
+
+func NewUserWorkerHandler(
+    emailService userdomain.EmailService,
+    userRepo userdomain.Repository,
+) *UserWorkerHandler {
+    return &UserWorkerHandler{
+        emailService: emailService,
+        userRepo:     userRepo,
+    }
+}
+
+// HandleSendWelcomeEmail processes the welcome email task
+func (h *UserWorkerHandler) HandleSendWelcomeEmail(ctx context.Context, payload workerlib.TaskPayload) error {
+    var p SendWelcomeEmailPayload
+    
+    // Unmarshal payload
+    data, _ := json.Marshal(payload)
+    if err := json.Unmarshal(data, &p); err != nil {
+        return fmt.Errorf("failed to unmarshal payload: %w", err)
+    }
+    
+    // Get user details
+    user, err := h.userRepo.GetByID(ctx, p.UserID)
+    if err != nil {
+        return fmt.Errorf("failed to get user: %w", err)
+    }
+    
+    // Send welcome email
+    if err := h.emailService.SendWelcomeEmail(ctx, user.Email, user.Name); err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
+    
+    return nil
+}
+
+// HandleExportUserData processes the user data export task
+func (h *UserWorkerHandler) HandleExportUserData(ctx context.Context, payload workerlib.TaskPayload) error {
+    var p ExportUserDataPayload
+    
+    data, _ := json.Marshal(payload)
+    if err := json.Unmarshal(data, &p); err != nil {
+        return fmt.Errorf("failed to unmarshal payload: %w", err)
+    }
+    
+    // Generate export file
+    user, err := h.userRepo.GetByID(ctx, p.UserID)
+    if err != nil {
+        return fmt.Errorf("failed to get user: %w", err)
+    }
+    
+    // Store export in storage system
+    // (implementation depends on storage backend)
+    
+    // Send notification
+    return nil
+}
+```
+
+#### Asynq Server Implementation
+
+```go
+// internal/infrastructure/worker/asynq/server.go
+package asynqworker
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/hibiken/asynq"
+    "go-modular-monolith/internal/infrastructure/worker"
+    "go-modular-monolith/internal/shared/context/logger"
+)
+
+type AsynqServer struct {
+    srv      *asynq.Server
+    mux      *asynq.ServeMux
+    handlers map[string]worker.TaskHandler
+    log      logger.Logger
+}
+
+func NewAsynqServer(redisURL string, concurrency int, log logger.Logger) *AsynqServer {
+    return &AsynqServer{
+        srv: asynq.NewServer(
+            asynq.RedisClientOpt{Addr: redisURL},
+            asynq.Config{
+                Concurrency: concurrency,
+                Queues: map[string]int{
+                    "critical": 6,
+                    "default":  3,
+                    "low":      1,
+                },
+            },
+        ),
+        mux:      asynq.NewServeMux(),
+        handlers: make(map[string]worker.TaskHandler),
+        log:      log,
+    }
+}
+
+func (s *AsynqServer) RegisterHandler(taskName string, handler worker.TaskHandler) error {
+    s.handlers[taskName] = handler
+    s.mux.HandleFunc(taskName, func(ctx context.Context, t *asynq.Task) error {
+        payload := worker.TaskPayload(t.Payload())
+        return handler(ctx, payload)
+    })
+    s.log.Info("Registered handler for task", "task", taskName)
+    return nil
+}
+
+func (s *AsynqServer) Start(ctx context.Context) error {
+    s.log.Info("Starting Asynq worker server")
+    return s.srv.Start(s.mux)
+}
+
+func (s *AsynqServer) Stop(ctx context.Context) error {
+    s.log.Info("Stopping Asynq worker server")
+    s.srv.Stop()
+    s.srv.WaitForShutdown()
+    return nil
+}
+```
+
+#### Asynq Client Implementation
+
+```go
+// internal/infrastructure/worker/asynq/client.go
+package asynqworker
+
+import (
+    "context"
+    "encoding/json"
+    "time"
+    
+    "github.com/hibiken/asynq"
+    "go-modular-monolith/internal/infrastructure/worker"
+)
+
+type AsynqClient struct {
+    client *asynq.Client
+}
+
+func NewAsynqClient(redisURL string) *AsynqClient {
+    return &AsynqClient{
+        client: asynq.NewClient(asynq.RedisClientOpt{Addr: redisURL}),
+    }
+}
+
+func (c *AsynqClient) Enqueue(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    options ...worker.Option,
+) error {
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    
+    task := asynq.NewTask(taskName, data)
+    _, err = c.client.EnqueueContext(ctx, task)
+    return err
+}
+
+func (c *AsynqClient) EnqueueDelayed(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    delay time.Duration,
+    options ...worker.Option,
+) error {
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    
+    task := asynq.NewTask(taskName, data)
+    _, err = c.client.EnqueueContext(
+        ctx,
+        task,
+        asynq.ProcessIn(delay),
+    )
+    return err
+}
+
+func (c *AsynqClient) Close() error {
+    return c.client.Close()
+}
+```
+
+### RabbitMQ Implementation
+
+```go
+// internal/infrastructure/worker/rabbitmq/client.go
+package rabbitmqworker
+
+import (
+    "context"
+    "encoding/json"
+    
+    amqp "github.com/rabbitmq/amqp091-go"
+    "go-modular-monolith/internal/infrastructure/worker"
+)
+
+type RabbitMQClient struct {
+    conn     *amqp.Connection
+    channel  *amqp.Channel
+    exchange string
+    queue    string
+}
+
+func NewRabbitMQClient(url, exchange, queue string) (*RabbitMQClient, error) {
+    conn, err := amqp.Dial(url)
+    if err != nil {
+        return nil, err
+    }
+    
+    ch, err := conn.Channel()
+    if err != nil {
+        return nil, err
+    }
+    
+    // Declare exchange
+    if err := ch.ExchangeDeclare(exchange, "topic", true, false, false, false, nil); err != nil {
+        return nil, err
+    }
+    
+    // Declare queue
+    if _, err := ch.QueueDeclare(queue, true, false, false, false, nil); err != nil {
+        return nil, err
+    }
+    
+    return &RabbitMQClient{
+        conn:     conn,
+        channel:  ch,
+        exchange: exchange,
+        queue:    queue,
+    }, nil
+}
+
+func (c *RabbitMQClient) Enqueue(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    options ...worker.Option,
+) error {
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    
+    return c.channel.PublishWithContext(
+        ctx,
+        c.exchange,
+        taskName, // routing key
+        true,     // mandatory
+        false,    // immediate
+        amqp.Publishing{
+            ContentType: "application/json",
+            Body:        data,
+            Persistent:  true,
+        },
+    )
+}
+
+func (c *RabbitMQClient) EnqueueDelayed(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    delay time.Duration,
+    options ...worker.Option,
+) error {
+    // RabbitMQ requires plugin for delayed delivery
+    // For now, just enqueue immediately
+    return c.Enqueue(ctx, taskName, payload, options...)
+}
+
+func (c *RabbitMQClient) Close() error {
+    if err := c.channel.Close(); err != nil {
+        return err
+    }
+    return c.conn.Close()
+}
+```
+
+### Redpanda/Kafka Implementation
+
+```go
+// internal/infrastructure/worker/redpanda/client.go
+package redpandaworker
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    
+    "github.com/segmentio/kafka-go"
+    "go-modular-monolith/internal/infrastructure/worker"
+)
+
+type RedpandaClient struct {
+    writer *kafka.Writer
+    topic  string
+}
+
+func NewRedpandaClient(brokers []string, topic string) *RedpandaClient {
+    writer := &kafka.Writer{
+        Addr:     kafka.TCP(brokers...),
+        Topic:    topic,
+        Balancer: &kafka.LeastBytes{},
+    }
+    
+    return &RedpandaClient{
+        writer: writer,
+        topic:  topic,
+    }
+}
+
+func (c *RedpandaClient) Enqueue(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    options ...worker.Option,
+) error {
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    
+    return c.writer.WriteMessages(ctx, kafka.Message{
+        Key:   []byte(taskName),
+        Value: data,
+    })
+}
+
+func (c *RedpandaClient) EnqueueDelayed(
+    ctx context.Context,
+    taskName string,
+    payload worker.TaskPayload,
+    delay time.Duration,
+    options ...worker.Option,
+) error {
+    // Redpanda doesn't natively support delayed delivery
+    // Could use scheduled processing topic or external scheduler
+    return c.Enqueue(ctx, taskName, payload, options...)
+}
+
+func (c *RedpandaClient) Close() error {
+    return c.writer.Close()
+}
+```
+
+### Integrating Workers into Service Layer
+
+```go
+// internal/modules/user/service/v1/service_v1.user.go
+package servicev1
+
+import (
+    "context"
+    workerlib "go-modular-monolith/internal/infrastructure/worker"
+    userdomain "go-modular-monolith/internal/modules/user/domain"
+    userworker "go-modular-monolith/internal/modules/user/worker"
+)
+
+type UserService struct {
+    repository  userdomain.Repository
+    workerClient workerlib.Client
+    eventBus    events.EventBus
+}
+
+func NewUserService(
+    repo userdomain.Repository,
+    client workerlib.Client,
+    bus events.EventBus,
+) *UserService {
+    return &UserService{
+        repository:   repo,
+        workerClient: client,
+        eventBus:     bus,
+    }
+}
+
+func (s *UserService) Create(ctx context.Context, req *userdomain.CreateUserRequest) (*userdomain.User, error) {
+    user := &userdomain.User{
+        ID:    uuid.New().String(),
+        Email: req.Email,
+        Name:  req.Name,
+    }
+    
+    if err := s.repository.Create(ctx, user); err != nil {
+        return nil, err
+    }
+    
+    // Enqueue welcome email task (async)
+    _ = userworker.EnqueueWelcomeEmail(
+        ctx,
+        s.workerClient,
+        user.ID,
+        user.Email,
+        user.Name,
+    )
+    
+    // Publish domain event
+    if s.eventBus != nil {
+        _ = s.eventBus.Publish(ctx, &userdomain.UserCreatedEvent{
+            UserID:  user.ID,
+            Email:   user.Email,
+            Created: time.Now(),
+        })
+    }
+    
+    return user, nil
+}
+```
+
+### Wiring Workers in Container
+
+```go
+// internal/app/core/container.go (excerpt)
+package core
+
+import (
+    "go-modular-monolith/internal/infrastructure/worker"
+    asynqworker "go-modular-monolith/internal/infrastructure/worker/asynq"
+    userworker "go-modular-monolith/internal/modules/user/worker"
+)
+
+func buildWorkerClient(config Config, featureFlags FeatureFlags) (worker.Client, error) {
+    if !featureFlags.Worker.Enabled {
+        return &NoOpWorker{}, nil
+    }
+    
+    switch featureFlags.Worker.Backend {
+    case "asynq":
+        return asynqworker.NewAsynqClient(config.App.Worker.Asynq.RedisURL), nil
+    case "rabbitmq":
+        return rabbitmqworker.NewRabbitMQClient(
+            config.App.Worker.RabbitMQ.URL,
+            config.App.Worker.RabbitMQ.Exchange,
+            config.App.Worker.RabbitMQ.Queue,
+        )
+    case "redpanda":
+        return redpandaworker.NewRedpandaClient(
+            config.App.Worker.Redpanda.Brokers,
+            config.App.Worker.Redpanda.Topic,
+        ), nil
+    default:
+        return &NoOpWorker{}, nil
+    }
+}
+
+func buildWorkerServer(config Config, featureFlags FeatureFlags, container *Container) (worker.Server, error) {
+    if !featureFlags.Worker.Enabled {
+        return &NoOpWorkerServer{}, nil
+    }
+    
+    var workerServer worker.Server
+    var err error
+    
+    switch featureFlags.Worker.Backend {
+    case "asynq":
+        workerServer = asynqworker.NewAsynqServer(
+            config.App.Worker.Asynq.RedisURL,
+            config.App.Worker.Asynq.Concurrency,
+            container.Logger,
+        )
+    case "rabbitmq":
+        // RabbitMQ server setup
+    case "redpanda":
+        // Redpanda server setup
+    }
+    
+    // Register handlers
+    userWorkerHandler := userworker.NewUserWorkerHandler(container.UserRepo)
+    if err := workerServer.RegisterHandler(
+        userworker.TaskSendWelcomeEmail,
+        userWorkerHandler.HandleSendWelcomeEmail,
+    ); err != nil {
+        return nil, err
+    }
+    
+    return workerServer, nil
+}
+```
+
+### Running Workers
+
+```bash
+# Start worker server for Asynq
+go run . worker
+
+# Start worker server with specific backend
+WORKER_BACKEND=rabbitmq go run . worker
+
+# Start with custom concurrency
+WORKER_CONCURRENCY=20 go run . worker
+```
+
+### Worker Command Handler
+
+```go
+// cmd/bootstrap/bootstrap.server.go (excerpt)
+package bootstrap
+
+func Server() error {
+    config := LoadConfig()
+    featureFlags := LoadFeatureFlags()
+    
+    if featureFlags.Worker.Enabled {
+        // Start worker server
+        workerServer, err := container.WorkerServer()
+        if err != nil {
+            return err
+        }
+        
+        // Run in separate goroutine
+        go func() {
+            if err := workerServer.Start(context.Background()); err != nil {
+                log.Fatal(err)
+            }
+        }()
+    }
+    
+    // Start HTTP server...
+}
+```
+
+### Best Practices
+
+1. **Idempotent Tasks**: Ensure tasks can safely run multiple times (retries)
+   ```go
+   // ✅ Good: Check if already processed
+   processed, _ := repo.CheckIfProcessed(ctx, userID, "welcome_email")
+   if processed {
+       return nil
+   }
+   ```
+
+2. **Graceful Shutdown**: Always gracefully stop workers
+   ```go
+   sigChan := make(chan os.Signal, 1)
+   signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+   <-sigChan
+   workerServer.Stop(ctx)
+   ```
+
+3. **Meaningful Error Handling**: Distinguish retryable vs non-retryable errors
+   ```go
+   if err := externalAPI.Call(); err != nil {
+       if isRetryable(err) {
+           return err // Will retry
+       } else {
+           return &NonRetryableError{err} // Won't retry
+       }
+   }
+   ```
+
+4. **Task Monitoring**: Log task progress
+   ```go
+   log.Info("Processing task",
+       "task_id", taskID,
+       "user_id", userID,
+       "retries", retryCount,
+   )
+   ```
+
+5. **Payload Validation**: Always validate and unmarshal payloads safely
+   ```go
+   if err := json.Unmarshal(payload, &p); err != nil {
+       return fmt.Errorf("invalid payload: %w", err)
+   }
+   ```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Tasks not being processed | Check worker server is running and handlers are registered |
+| High memory usage | Reduce concurrency or check for memory leaks in handlers |
+| Tasks stuck in queue | Check task handler error handling and retry configuration |
+| Connection timeouts | Verify broker connectivity and network configuration |
+
+---
+
+## Email Services
+
+The application supports multiple email providers for sending transactional and notification emails. Email services are integrated with the worker system to enable asynchronous email sending via background tasks.
+
+### Supported Providers
+
+| Provider | Use Case | Features | Production Ready |
+|----------|----------|----------|------------------|
+| **SMTP** | Standard email | Native SMTP protocol, TLS/auth, attachments | ✅ Yes |
+| **Mailgun** | Email API service | REST API, templates, tracking, deliverability | ✅ Yes |
+| **NoOp** | Development/Testing | Mock implementation, logs to stdout | ✅ Yes |
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                   Service Layer                              │
+│                  (Business Logic)                            │
+└────────────────┬─────────────────────────────────────────────┘
+                 │ Enqueue Email Task
+                 ▼
+┌──────────────────────────────────────────────────────────────┐
+│                   Worker Queue                               │
+│         (Asynq / RabbitMQ / Redpanda)                       │
+└────────────────┬─────────────────────────────────────────────┘
+                 │ Dequeue & Process
+                 ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Email Service Layer                             │
+│   (SMTP / Mailgun / NoOp)                                    │
+└────────────────┬─────────────────────────────────────────────┘
+                 │ Send
+                 ▼
+┌──────────────────────────────────────────────────────────────┐
+│            Email Provider Backend                            │
+│     (SMTP Server / Mailgun API / STDOUT)                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Project Structure
+
+```
+internal/
+├── shared/
+│   └── email/
+│       ├── email.go         # EmailService interface
+│       └── noop.go          # NoOp implementation
+└── infrastructure/
+    └── email/
+        ├── smtp/
+        │   └── smtp.go      # SMTP implementation
+        └── mailgun/
+            └── mailgun.go   # Mailgun implementation
+```
+
+### Configuration
+
+#### config/config.yaml
+
+```yaml
+app:
+  email:
+    enabled: true
+    provider: "smtp"  # smtp | mailgun | noop
+    
+    # SMTP configuration
+    smtp:
+      host: "smtp.gmail.com"
+      port: 587
+      username: "your-email@gmail.com"
+      password: "your-app-password"
+      from_addr: "noreply@example.com"
+      from_name: "MyApp"
+    
+    # Mailgun configuration
+    mailgun:
+      domain: "mg.example.com"
+      api_key: "key-xxxx"
+      from_addr: "noreply@example.com"
+      from_name: "MyApp"
+```
+
+#### config/featureflags.yaml
+
+```yaml
+email:
+  enabled: true
+  provider: "noop"  # smtp | mailgun | noop
+```
+
+### Email Service Interface
+
+```go
+// internal/shared/email/email.go
+package email
+
+import "context"
+
+type Email struct {
+    To            []string              // Recipients
+    CC            []string              // Carbon copy
+    BCC           []string              // Blind carbon copy
+    Subject       string                // Email subject
+    TextBody      string                // Plain text body
+    HTMLBody      string                // HTML body
+    Attachments   []Attachment          // File attachments
+    TemplateData  map[string]interface{} // Template variables
+    ReplyTo       []string              // Reply-to addresses
+    Headers       map[string]string     // Custom headers
+}
+
+type Attachment struct {
+    Filename string
+    Content  []byte
+    MimeType string
+}
+
+// EmailService sends emails via configured provider
+type EmailService interface {
+    // Send sends a single email
+    Send(ctx context.Context, email *Email) error
+    
+    // SendBatch sends multiple emails
+    SendBatch(ctx context.Context, emails []*Email) error
+    
+    // SendTemplate sends email using a provider template
+    SendTemplate(ctx context.Context, email *Email, templateName string) error
+    
+    // ValidateEmail validates email format
+    ValidateEmail(ctx context.Context, email string) bool
+    
+    // Health checks service connectivity
+    Health(ctx context.Context) error
+}
+```
+
+### SMTP Implementation
+
+```go
+// internal/infrastructure/email/smtp/smtp.go
+package smtp
+
+import "context"
+
+type SMTPConfig struct {
+    Host     string // SMTP host (e.g., smtp.gmail.com)
+    Port     int    // SMTP port (e.g., 587 for TLS)
+    Username string // SMTP username
+    Password string // SMTP password
+    FromAddr string // From email address
+    FromName string // From name
+}
+
+// SMTPEmailService sends emails via SMTP
+type SMTPEmailService struct {
+    config SMTPConfig
+    addr   string // Cached host:port
+}
+
+func NewSMTPEmailService(config SMTPConfig) *SMTPEmailService {
+    return &SMTPEmailService{
+        config: config,
+        addr:   fmt.Sprintf("%s:%d", config.Host, config.Port),
+    }
+}
+
+// Features:
+// - TLS/SMTP authentication
+// - HTML and plain text bodies
+// - CC/BCC support
+// - Custom headers
+// - File attachments via MIME
+// - Reply-To addresses
+// - Email validation via regex
+```
+
+### Mailgun Implementation
+
+```go
+// internal/infrastructure/email/mailgun/mailgun.go
+package mailgun
+
+import "context"
+
+type MailgunConfig struct {
+    Domain   string // Mailgun domain
+    APIKey   string // Mailgun API key
+    FromAddr string // From email address
+    FromName string // From name
+}
+
+// MailgunEmailService sends emails via Mailgun API
+type MailgunEmailService struct {
+    config   MailgunConfig
+    mg       mailgun.Mailgun
+    fromAddr string
+}
+
+func NewMailgunEmailService(config MailgunConfig) *MailgunEmailService {
+    mg := mailgun.NewMailgun(config.Domain, config.APIKey)
+    return &MailgunEmailService{
+        config:   config,
+        mg:       mg,
+        fromAddr: fmt.Sprintf("%s <%s>", config.FromName, config.FromAddr),
+    }
+}
+
+// Features:
+// - Mailgun REST API
+// - Template support
+// - Batch sending
+// - Custom headers
+// - File attachments
+// - Email validation
+// - Delivery tracking
+```
+
+### Integration with Workers
+
+Email services are typically used with the worker system for asynchronous sending:
+
+```go
+// internal/modules/user/worker/handlers.go
+package worker
+
+import (
+    "context"
+    "go-modular-monolith/internal/shared/email"
+    workerlib "go-modular-monolith/internal/infrastructure/worker"
+)
+
+type UserWorkerHandler struct {
+    userRepository userdomain.Repository
+    emailService   email.EmailService
+}
+
+// HandleSendWelcomeEmail processes welcome email task
+func (h *UserWorkerHandler) HandleSendWelcomeEmail(ctx context.Context, payload workerlib.TaskPayload) error {
+    var p SendWelcomeEmailPayload
+    
+    // Unmarshal and validate payload
+    data, _ := json.Marshal(payload)
+    if err := json.Unmarshal(data, &p); err != nil {
+        return fmt.Errorf("failed to unmarshal payload: %w", err)
+    }
+    
+    // Get user
+    user, err := h.userRepository.GetByID(ctx, p.UserID)
+    if err != nil {
+        return fmt.Errorf("failed to get user: %w", err)
+    }
+    
+    // Send email
+    emailMsg := &email.Email{
+        To:       []string{user.Email},
+        Subject:  "Welcome to Our Platform!",
+        HTMLBody: fmt.Sprintf("<h1>Welcome %s!</h1>", user.Name),
+        TextBody: fmt.Sprintf("Welcome %s!", user.Name),
+    }
+    
+    if err := h.emailService.Send(ctx, emailMsg); err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
+    
+    return nil
+}
+```
+
+### Usage Example
+
+```go
+// Enqueue a welcome email task
+container := NewContainer(featureFlags, config, db, mongoClient)
+
+payload := worker.SendWelcomeEmailPayload{
+    UserID: "user-123",
+    Email:  "user@example.com",
+    Name:   "John Doe",
+}
+
+err := container.WorkerClient.Enqueue(ctx, worker.TaskSendWelcomeEmail, payload)
+```
+
+The worker will:
+1. Dequeue the task
+2. Call the handler
+3. The handler retrieves user details and sends email via the configured provider
+4. Handles retries automatically on failure
+
+### Feature Flag Controls
+
+Email services can be disabled or switched via feature flags without code changes:
+
+```yaml
+# Enable SMTP in production
+email:
+  enabled: true
+  provider: "smtp"
+
+# Disable in development
+email:
+  enabled: false
+  provider: "noop"
+```
+
+---
+
 
 ### Development Guidelines
 

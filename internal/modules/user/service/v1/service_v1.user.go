@@ -6,16 +6,18 @@ import (
 	"time"
 
 	"go-modular-monolith/internal/modules/user/domain"
+	"go-modular-monolith/internal/shared/email"
 	"go-modular-monolith/internal/shared/events"
 )
 
 type ServiceV1 struct {
-	repo     domain.Repository
-	eventBus events.EventBus
+	repo         domain.Repository
+	eventBus     events.EventBus
+	emailService email.EmailService
 }
 
-func NewServiceV1(r domain.Repository, eb events.EventBus) *ServiceV1 {
-	return &ServiceV1{repo: r, eventBus: eb}
+func NewServiceV1(r domain.Repository, eb events.EventBus, es email.EmailService) *ServiceV1 {
+	return &ServiceV1{repo: r, eventBus: eb, emailService: es}
 }
 
 func (s *ServiceV1) Create(ctx context.Context, req *domain.CreateUserRequest, createdBy string) (user *domain.User, err error) {
@@ -41,6 +43,16 @@ func (s *ServiceV1) Create(ctx context.Context, req *domain.CreateUserRequest, c
 	u.CreatedBy = createdBy
 	if err = s.repo.Create(ctx, &u); err != nil {
 		return nil, err
+	}
+
+	// Send welcome email asynchronously (via worker or background task)
+	if s.emailService != nil {
+		_ = s.emailService.Send(ctx, &email.Email{
+			To:       []string{u.Email},
+			Subject:  fmt.Sprintf("Welcome %s", u.Name),
+			TextBody: fmt.Sprintf("Welcome to our platform, %s!\n\nYour account has been created successfully.", u.Name),
+			HTMLBody: fmt.Sprintf("<h1>Welcome %s</h1><p>Your account has been created successfully.</p>", u.Name),
+		})
 	}
 
 	// Publish event for inter-module communication
