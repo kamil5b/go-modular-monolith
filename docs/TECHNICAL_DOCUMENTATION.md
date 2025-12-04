@@ -2167,6 +2167,655 @@ func Server() error {
 
 ---
 
+## gRPC Integration
+
+The application supports gRPC alongside HTTP for high-performance, type-safe inter-service communication. gRPC handlers coexist with HTTP handlers and share the same service layer, enabling dual-protocol support.
+
+### Overview
+
+**gRPC** (gRPC Remote Procedure Call) is a modern, high-performance RPC framework that uses Protocol Buffers for serialization. Key benefits:
+
+- **Type Safety**: Strongly-typed contracts via Protocol Buffers
+- **Performance**: Binary serialization, HTTP/2, multiplexing
+- **Code Generation**: Auto-generated client/server code
+- **Streaming**: Bi-directional streaming support
+- **Cross-Language**: Clients in any language
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Client Layer                              │
+│                   (gRPC Client / HTTP Client)                    │
+└────────────────┬───────────────────────┬────────────────────────┘
+                 │                       │
+                 ▼                       ▼
+┌────────────────────────┐  ┌────────────────────────┐
+│   gRPC Transport       │  │   HTTP Transport       │
+│   (Port 9090)          │  │   (Port 8080)          │
+├────────────────────────┤  ├────────────────────────┤
+│  gRPC Handler Layer    │  │  HTTP Handler Layer    │
+│  (Protobuf I/O)        │  │  (JSON I/O)            │
+└────────────┬───────────┘  └───────────┬────────────┘
+             │                          │
+             └──────────┬───────────────┘
+                        ▼
+              ┌──────────────────┐
+              │  Service Layer   │
+              │ (Business Logic) │
+              └─────────┬────────┘
+                        ▼
+              ┌──────────────────┐
+              │ Repository Layer │
+              │  (Data Access)   │
+              └──────────────────┘
+```
+
+### Project Structure
+
+```
+internal/
+├── transports/
+│   └── grpc/
+│       ├── adapter.go              # GRPCContext adapter
+│       └── server.go               # gRPC server wrapper
+└── modules/
+    └── <module>/
+        ├── domain/
+        │   ├── model.go
+        │   ├── interfaces.go
+        │   └── proto/              # Proto definitions (source of truth)
+        │       ├── README.md       # Proto documentation
+        │       └── v1/
+        │           └── <module>.proto  # Protocol Buffer definition
+        ├── handler/
+        │   └── grpc/               # gRPC handler implementation
+        │       ├── handler.grpc.<module>.go
+        │       └── handler.grpc.<module>_test.go
+        └── proto/                  # Generated protobuf code
+            ├── v1/                 # Version-specific generated code
+            │   ├── <module>.pb.go      # Generated Go structs
+            │   └── <module>_grpc.pb.go # Generated gRPC service code
+            └── adapters/           # Domain/Protobuf converters
+                ├── converters.go
+                └── converters_test.go
+```
+
+**Note**: Proto files live in `domain/proto/v1/` as they define the domain contract. Generated code goes in `proto/v1/` at module root, maintaining version structure.
+
+### Protocol Buffer Definition
+
+```protobuf
+// internal/modules/product/domain/proto/v1/product.proto
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1;productv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Product service for managing products
+service ProductService {
+  rpc Create(CreateProductRequest) returns (CreateProductResponse);
+  rpc Get(GetProductRequest) returns (GetProductResponse);
+  rpc List(google.protobuf.Empty) returns (ListProductResponse);
+  rpc Update(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc Delete(DeleteProductRequest) returns (google.protobuf.Empty);
+}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string created_by = 5;
+  optional google.protobuf.Timestamp updated_at = 6;
+  optional string updated_by = 7;
+  optional google.protobuf.Timestamp deleted_at = 8;
+  optional string deleted_by = 9;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string description = 2;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+// ... additional messages
+```
+
+### Code Generation
+
+Generate Go code from `.proto` files using the provided script:
+
+```bash
+# Generate protobuf code for a specific module (e.g., product)
+bash scripts/generate-module-protobuf.sh product
+
+# Generate protobuf code for all modules
+bash scripts/generate-module-protobuf.sh
+```
+
+**Manual Generation** (if needed):
+```bash
+# Navigate to project root
+cd /path/to/go-modular-monolith
+
+# Generate for Product module
+protoc \
+  --go_out=internal/modules/product/proto \
+  --go-grpc_out=internal/modules/product/proto \
+  --go_opt=paths=source_relative \
+  --go-grpc_opt=paths=source_relative \
+  -I./internal/modules/product/domain/proto \
+  internal/modules/product/domain/proto/v1/product.proto
+```
+
+**Generated Files Structure:**
+```
+internal/modules/product/
+├── domain/proto/v1/product.proto    ← Source (version controlled)
+└── proto/v1/                        ← Generated (git ignored)
+    ├── product.pb.go                ← Generated structs
+    └── product_grpc.pb.go           ← Generated service/client code
+```
+
+**Prerequisites:**
+```bash
+# Install protoc compiler
+# macOS
+brew install protobuf
+
+# Linux (Ubuntu/Debian)
+apt-get install protobuf-compiler
+
+# Alpine
+apk add protobuf
+
+# Install Go plugins (required)
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# Verify installation
+protoc --version  # Should be v3 or higher
+which protoc-gen-go protoc-gen-go-grpc  # Should show paths
+```
+
+### Domain/Protobuf Adapters
+
+Converters translate between domain models and protobuf messages:
+
+```go
+// internal/modules/product/proto/adapters/converters.go
+package adapters
+
+import (
+	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
+	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+)
+
+// DomainProductToPBProduct converts domain Product to protobuf Product
+func DomainProductToPBProduct(domain *productDomain.Product) *productv1.Product {
+	if domain == nil {
+		return nil
+	}
+
+	pb := &productv1.Product{
+		Id:          domain.ID,
+		Name:        domain.Name,
+		Description: domain.Description,
+		CreatedBy:   domain.CreatedBy,
+	}
+
+	if !domain.CreatedAt.IsZero() {
+		pb.CreatedAt = timestamppb.New(domain.CreatedAt)
+	}
+
+	if domain.UpdatedAt != nil && !domain.UpdatedAt.IsZero() {
+		pb.UpdatedAt = timestamppb.New(*domain.UpdatedAt)
+	}
+
+	// Handle optional fields...
+	return pb
+}
+
+// PBProductToDomainProduct converts protobuf Product to domain Product
+func PBProductToDomainProduct(pb *productv1.Product) *productDomain.Product {
+	if pb == nil {
+		return nil
+	}
+
+	product := &productDomain.Product{
+		ID:          pb.GetId(),
+		Name:        pb.GetName(),
+		Description: pb.GetDescription(),
+		CreatedBy:   pb.GetCreatedBy(),
+	}
+
+	if pb.CreatedAt != nil {
+		product.CreatedAt = pb.CreatedAt.AsTime()
+	}
+
+	return product
+}
+
+// PBCreateProductRequestToDomainRequest converts request
+func PBCreateProductRequestToDomainRequest(pb *productv1.CreateProductRequest) *productDomain.CreateProductRequest {
+	return &productDomain.CreateProductRequest{
+		Name:        pb.GetName(),
+		Description: pb.GetDescription(),
+	}
+}
+```
+
+### gRPC Handler Implementation
+
+```go
+// internal/modules/product/handler/grpc/handler.grpc.product.go
+package grpc
+
+import (
+	"context"
+
+	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
+	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	"github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/adapters"
+	grpcAdapter "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+// GRPCHandler implements the Product gRPC service
+type GRPCHandler struct {
+	service productDomain.Service
+	productv1.UnimplementedProductServiceServer
+}
+
+func NewGRPCHandler(service productDomain.Service) *GRPCHandler {
+	return &GRPCHandler{service: service}
+}
+
+// Create creates a new product
+func (h *GRPCHandler) Create(ctx context.Context, req *productv1.CreateProductRequest) (*productv1.CreateProductResponse, error) {
+	createdBy := ""
+	if uid := ctx.Value("user_id"); uid != nil {
+		createdBy = uid.(string)
+	}
+
+	createReq := adapters.PBCreateProductRequestToDomainRequest(req)
+
+	product, err := h.service.Create(ctx, createReq, createdBy)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productv1.CreateProductResponse{
+		Product: adapters.DomainProductToPBProduct(product),
+	}, nil
+}
+
+// Get retrieves a product by ID
+func (h *GRPCHandler) Get(ctx context.Context, req *productv1.GetProductRequest) (*productv1.GetProductResponse, error) {
+	product, err := h.service.Get(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &productv1.GetProductResponse{
+		Product: adapters.DomainProductToPBProduct(product),
+	}, nil
+}
+
+// List retrieves all products
+func (h *GRPCHandler) List(ctx context.Context, _ *emptypb.Empty) (*productv1.ListProductResponse, error) {
+	products, err := h.service.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pbProducts := make([]*productv1.Product, len(products))
+	for i, p := range products {
+		pbProducts[i] = adapters.DomainProductToPBProduct(&p)
+	}
+
+	return &productv1.ListProductResponse{
+		Products: pbProducts,
+	}, nil
+}
+
+// RegisterService registers the Product service with the gRPC server
+func RegisterService(h *GRPCHandler) grpcAdapter.ServiceRegistrar {
+	return func(s *grpc.Server) {
+		productv1.RegisterProductServiceServer(s, h)
+	}
+}
+```
+
+### gRPC Server Setup
+
+```go
+// internal/transports/grpc/server.go
+package grpctransport
+
+import (
+	"context"
+	"net"
+
+	grpc "google.golang.org/grpc"
+)
+
+type ServiceRegistrar func(s *grpc.Server)
+
+type Server struct {
+	srv        *grpc.Server
+	registrars []ServiceRegistrar
+}
+
+func NewServer(opts ...grpc.ServerOption) *Server {
+	return &Server{
+		srv:        grpc.NewServer(opts...),
+		registrars: []ServiceRegistrar{},
+	}
+}
+
+func (s *Server) RegisterService(r ServiceRegistrar) {
+	s.registrars = append(s.registrars, r)
+}
+
+func (s *Server) Start(ctx context.Context, addr string) error {
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	// Register all services
+	for _, r := range s.registrars {
+		r(s.srv)
+	}
+
+	// Run server
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- s.srv.Serve(lis)
+	}()
+
+	// Wait for context cancellation or error
+	select {
+	case <-ctx.Done():
+		s.srv.GracefulStop()
+		return ctx.Err()
+	case err := <-serveErr:
+		return err
+	}
+}
+
+func (s *Server) Stop() {
+	s.srv.GracefulStop()
+}
+```
+
+### Container Wiring
+
+```go
+// internal/app/core/container.go
+import (
+	productGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
+)
+
+type Container struct {
+	// ... existing fields
+	ProductGRPCHandler *productGRPC.GRPCHandler
+}
+
+func NewContainer(/* params */) *Container {
+	// ... existing setup
+
+	// Create gRPC handler (shares same service as HTTP handler)
+	productGRPCHandler := productGRPC.NewGRPCHandler(productService)
+
+	return &Container{
+		// ... existing fields
+		ProductGRPCHandler: productGRPCHandler,
+	}
+}
+```
+
+### Bootstrap Server
+
+```go
+// cmd/bootstrap/bootstrap.server.go
+import (
+	productGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
+	grpctransport "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+)
+
+func Server() error {
+	// ... load config and create container
+
+	// Start HTTP server
+	go func() {
+		httpServer := createHTTPServer(container)
+		logger.Info("Starting HTTP server", "port", cfg.App.Server.Port)
+		httpServer.Start(":" + cfg.App.Server.Port)
+	}()
+
+	// Start gRPC server
+	go func() {
+		grpcServer := grpctransport.NewServer()
+
+		// Register gRPC services
+		if container.ProductGRPCHandler != nil {
+			grpcServer.RegisterService(productGRPC.RegisterService(container.ProductGRPCHandler))
+		}
+
+		logger.Info("Starting gRPC server", "port", cfg.App.Server.GRPCPort)
+		if err := grpcServer.Start(ctx, ":"+cfg.App.Server.GRPCPort); err != nil {
+			logger.Error("gRPC server error", "error", err)
+		}
+	}()
+
+	// Wait for shutdown signal
+	<-shutdownSignal
+}
+```
+
+### Configuration
+
+```yaml
+# config/config.yaml
+app:
+  server:
+    port: "8080"       # HTTP server port
+    grpc_port: "9090"  # gRPC server port
+```
+
+### Testing gRPC Endpoints
+
+**Using grpcurl:**
+```bash
+# List services
+grpcurl -plaintext localhost:9090 list
+
+# List methods
+grpcurl -plaintext localhost:9090 list product.v1.ProductService
+
+# Call Create method
+grpcurl -plaintext -d '{"name":"Test Product","description":"A test"}' \
+  localhost:9090 product.v1.ProductService/Create
+
+# Call Get method
+grpcurl -plaintext -d '{"id":"123"}' \
+  localhost:9090 product.v1.ProductService/Get
+
+# Call List method
+grpcurl -plaintext -d '{}' \
+  localhost:9090 product.v1.ProductService/List
+```
+
+**Using Go client:**
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+func main() {
+	conn, err := grpc.Dial("localhost:9090", 
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	client := productv1.NewProductServiceClient(conn)
+
+	// Create product
+	resp, err := client.Create(context.Background(), &productv1.CreateProductRequest{
+		Name:        "Test Product",
+		Description: "A test product",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Created product: %+v", resp.Product)
+}
+```
+
+### HTTP vs gRPC Comparison
+
+| Aspect | HTTP/JSON | gRPC/Protobuf |
+|--------|-----------|---------------|
+| **Protocol** | HTTP/1.1 | HTTP/2 |
+| **Serialization** | JSON (text) | Protocol Buffers (binary) |
+| **Performance** | Moderate | High (3-10x faster) |
+| **Payload Size** | Larger | Smaller (30-50% reduction) |
+| **Type Safety** | Runtime (JSON schema) | Compile-time (protobuf) |
+| **Browser Support** | Native | Requires gRPC-Web |
+| **Debugging** | Easy (readable JSON) | Requires tools (grpcurl) |
+| **Streaming** | Limited (SSE, WebSocket) | Native bi-directional |
+| **Use Case** | Public APIs, web apps | Internal services, microservices |
+
+### Best Practices
+
+1. **Place Proto Files in Domain**: Keep `.proto` files in `domain/proto/v1/` folder
+   - Proto definitions are part of the domain contract
+   - Maintains module isolation and single source of truth
+   - Generated code goes to `proto/v1/` at module root
+   ```
+   internal/modules/product/
+   ├── domain/proto/v1/product.proto    ← Source of truth
+   └── proto/v1/
+       ├── product.pb.go                ← Generated structs
+       └── product_grpc.pb.go           ← Generated service code
+   ```
+
+2. **Version Your APIs**: Use versioned packages and directories (`v1`, `v2`)
+   ```protobuf
+   package product.v1;
+   option go_package = "github.com/yourorg/project/internal/modules/product/proto/v1;productv1";
+   ```
+   - Source files: `domain/proto/v1/*.proto`, `domain/proto/v2/*.proto`
+   - Generated files: `proto/v1/*.pb.go`, `proto/v2/*.pb.go`
+   - Import path: `import productv1 "project/internal/modules/product/proto/v1"`
+
+3. **Use Adapters**: Keep domain models separate from protobuf messages
+   - Domain models remain stable
+   - Protobuf messages can evolve independently
+   - Easy to add new transport protocols
+
+4. **Share Service Layer**: Both HTTP and gRPC handlers use the same service
+   ```go
+   // Same service for both transports
+   httpHandler := handlerV1.NewHandler(productService)
+   grpcHandler := handlerGRPC.NewGRPCHandler(productService)
+   ```
+
+5. **Error Handling**: Map domain errors to gRPC status codes
+   ```go
+   import "google.golang.org/grpc/status"
+   import "google.golang.org/grpc/codes"
+
+   if err != nil {
+       if errors.Is(err, domain.ErrNotFound) {
+           return nil, status.Error(codes.NotFound, err.Error())
+       }
+       return nil, status.Error(codes.Internal, err.Error())
+   }
+   ```
+
+6. **Metadata for Auth**: Use gRPC metadata for authentication
+   ```go
+   import "google.golang.org/grpc/metadata"
+
+   md, ok := metadata.FromIncomingContext(ctx)
+   if ok {
+       token := md.Get("authorization")
+       // Validate token
+   }
+   ```
+
+7. **Test Both Transports**: Ensure feature parity
+   ```go
+   // Test gRPC handler
+   func TestGRPCHandler_Create(t *testing.T) {
+       handler := NewGRPCHandler(mockService)
+       resp, err := handler.Create(ctx, &productv1.CreateProductRequest{
+           Name: "Test",
+       })
+       assert.NoError(t, err)
+       assert.NotNil(t, resp.Product)
+   }
+   ```
+
+### Dependency Linter Rules
+
+The dependency linter allows handlers to import from their own module's `proto` folder:
+
+```
+✅ Allowed: internal/modules/product/handler/grpc imports internal/modules/product/proto/v1
+✅ Allowed: internal/modules/product/handler/grpc imports internal/modules/product/proto/adapters
+❌ Forbidden: internal/modules/product/handler/grpc imports internal/modules/user/proto/v1
+```
+
+Linter configuration in `cmd/lint-deps/main.go`:
+```go
+// Handler layer can import own domain, proto, and shared
+if layer == "handler" {
+    if strings.Contains(importPath, "/modules/") && 
+        !strings.Contains(importPath, "/modules/"+moduleName+"/domain") &&
+        !strings.Contains(importPath, "/modules/"+moduleName+"/proto") {
+        // Violation: handler importing from other module
+    }
+}
+```
+
+This allows handlers to import versioned proto packages (e.g., `proto/v1`, `proto/v2`) while maintaining module isolation.
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `protoc` command not found | Install Protocol Buffer compiler: `brew install protobuf` or `apt-get install protobuf-compiler` |
+| Plugin not found | Install Go plugins: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` |
+| Import cycle detected | Ensure adapters only convert between proto and domain, no business logic |
+| Port already in use | Change `grpc_port` in config or kill process using port |
+| Connection refused | Verify gRPC server is running and listening on correct port |
+
+---
+
 ## Email Services
 
 The application supports multiple email providers for sending transactional and notification emails. Email services are integrated with the worker system to enable asynchronous email sending via background tasks.

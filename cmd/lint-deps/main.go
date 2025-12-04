@@ -243,9 +243,9 @@ func main() {
 					}
 					// Handler layer
 					if layer == "handler" {
-						if strings.Contains(importPath, "/modules/") && !strings.Contains(importPath, "/modules/"+moduleName+"/domain") {
+						if strings.Contains(importPath, "/modules/") && !strings.Contains(importPath, "/modules/"+moduleName+"/domain") && !strings.Contains(importPath, "/modules/"+moduleName+"/proto") {
 							violation := fmt.Sprintf(
-								"❌ %s (handler) imports %s (handler can only import own domain/shared)",
+								"❌ %s (handler) imports %s (handler can only import own domain/proto/shared)",
 								relPath,
 								importPath,
 							)

@@ -1,4 +1,41 @@
-.PHONY: run server worker test test-unit test-internal lint migrate deps-check mocks-gen clean-mocks mock
+.PHONY: help run server worker test test-unit test-internal lint proto proto-% migrate deps-check mocks-gen clean-mocks mock
+
+# Display available targets
+help:
+	@echo "Available targets:"
+	@echo "  Application:"
+	@echo "    run              - Run the application (migrations + server)"
+	@echo "    server           - Run server only (skip migrations)"
+	@echo "    worker           - Run worker only"
+	@echo "    build            - Build the application"
+	@echo ""
+	@echo "  Testing:"
+	@echo "    test             - Run all tests with race detection"
+	@echo "    test-unit        - Run unit tests only"
+	@echo "    test-internal    - Run tests for internal packages only"
+	@echo ""
+	@echo "  Code Quality:"
+	@echo "    lint             - Run golangci-lint"
+	@echo "    deps-check       - Check module dependency violations"
+	@echo ""
+	@echo "  Protocol Buffers:"
+	@echo "    proto            - Generate protobuf code for all modules"
+	@echo "    proto-<module>   - Generate protobuf code for specific module"
+	@echo "                       (e.g., make proto-product)"
+	@echo ""
+	@echo "  Database:"
+	@echo "    migrate-up       - Apply SQL migrations"
+	@echo "    migrate-down     - Rollback SQL migrations"
+	@echo "    migrate-mongo    - Apply MongoDB migrations"
+	@echo ""
+	@echo "  Mocks:"
+	@echo "    mocks-gen        - Generate mocks from source"
+	@echo "    clean-mocks      - Remove generated mocks"
+	@echo "    mock             - Clean and regenerate all mocks"
+	@echo ""
+	@echo "  CI/CD:"
+	@echo "    pre-commit       - Run all checks before committing"
+	@echo "    clean            - Clean build artifacts"
 
 # Run the application
 run:
@@ -27,18 +64,25 @@ test-internal:
 lint:
 	golangci-lint run ./...
 
+# Generate protobuf code for all modules
+proto:
+	@bash scripts/generate-module-protobuf.sh
+
+# Generate protobuf code for specific module (e.g., make proto-product)
+proto-%:
+	@bash scripts/generate-module-protobuf.sh $*
+
 # Check module dependencies
 deps-check:
 	go run cmd/lint-deps/main.go
 
-# Run SQL migrations
+# Database migrations
 migrate-up:
 	go run . migration sql up
 
 migrate-down:
 	go run . migration sql down
 
-# Run MongoDB migrations
 migrate-mongo:
 	go run . migration mongo up
 
@@ -68,5 +112,5 @@ build:
 clean:
 	rm -rf bin/
 
-# All checks before commit
+# All checks before commit (run proto generation manually if .proto files changed)
 pre-commit: deps-check lint test

@@ -67,11 +67,24 @@ go run .
 ### CLI Commands
 
 ```bash
-go run .                      # Run migrations and start server
-go run . server               # Start server only
+# Application
+go run .                      # Run migrations and start HTTP + gRPC servers
+go run . server               # Start servers only (skip migrations)
+go run . worker               # Start worker only
+
+# Database Migrations
 go run . migration sql up     # Apply SQL migrations
 go run . migration sql down   # Rollback SQL migrations
 go run . migration mongo up   # Apply MongoDB migrations
+
+# Protocol Buffers
+make proto                    # Generate protobuf code for all modules
+make proto-product            # Generate protobuf code for product module
+
+# Development
+make deps-check               # Check module dependency violations
+make test                     # Run all tests
+make lint                     # Run linter
 ```
 
 ## Configuration
@@ -83,8 +96,8 @@ environment: development
 
 app:
   server:
-    port: "8080"
-    grpc_port: "9090"
+    port: "8080"        # HTTP server port
+    grpc_port: "9090"   # gRPC server port
 
   database:
     sql:
@@ -133,8 +146,12 @@ go-pste-boilerplate/
 │   ├── modules/           # Business modules (auth, product, user)
 │   │   └── <module>/
 │   │       ├── domain/    # Module's private domain types
+│   │       │   └── proto/ # Protocol Buffer definitions (source)
+│   │       ├── proto/     # Generated protobuf code
+│   │       │   ├── v1/    # Version-specific generated code
+│   │       │   └── adapters/ # Domain/Proto converters
 │   │       ├── acl/       # Anti-Corruption Layer adapters
-│   │       ├── handler/   # HTTP handlers (v1, noop)
+│   │       ├── handler/   # HTTP and gRPC handlers (v1, noop)
 │   │       ├── service/   # Business logic (v1, noop)
 │   │       └── repository/# Data access (sql, mongo, noop)
 │   ├── shared/            # Shared kernel (cross-cutting concerns)
@@ -143,13 +160,15 @@ go-pste-boilerplate/
 │   │   ├── events/        # Event bus for inter-module communication
 │   │   ├── uow/           # Unit of Work interface
 │   │   └── validator/     # Request validation
-│   └── transports/        # HTTP framework adapters
+│   └── transports/        # HTTP and gRPC framework adapters
 └── pkg/                   # Shared utilities
 ```
 
 ## API Endpoints
 
-### Authentication (Public)
+### HTTP Endpoints
+
+#### Authentication (Public)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -186,12 +205,41 @@ go-pste-boilerplate/
 | PUT | `/user/:id` | Update user |
 | DELETE | `/user/:id` | Delete user |
 
+### gRPC Services
+
+The application exposes gRPC services alongside HTTP endpoints for high-performance communication.
+
+#### Product Service (Port 9090)
+
+| Method | Service | Description |
+|--------|---------|-------------|
+| Create | `product.v1.ProductService/Create` | Create a new product |
+| Get | `product.v1.ProductService/Get` | Get product by ID |
+| List | `product.v1.ProductService/List` | List all products |
+| Update | `product.v1.ProductService/Update` | Update existing product |
+| Delete | `product.v1.ProductService/Delete` | Delete product |
+
+**Test with grpcurl:**
+```bash
+# List available services
+grpcurl -plaintext localhost:9090 list
+
+# Create product
+grpcurl -plaintext -d '{"name":"Test Product","description":"A test"}' \
+  localhost:9090 product.v1.ProductService/Create
+
+# Get product
+grpcurl -plaintext -d '{"id":"123"}' \
+  localhost:9090 product.v1.ProductService/Get
+```
+
 ## Tech Stack
 
 | Component | Technology |
 |-----------|------------|
 | Language | Go 1.24.7 |
 | HTTP Frameworks | Echo v4, Gin v1, Fiber, fasthttp, net/http |
+| RPC Framework | gRPC with Protocol Buffers |
 | SQL Database | PostgreSQL (sqlx) |
 | NoSQL Database | MongoDB |
 | Cache | Redis, Memory |
@@ -316,15 +364,19 @@ For detailed documentation, see [Technical Documentation](docs/TECHNICAL_DOCUMEN
 - [x] **Worker Support** - Asynq, RabbitMQ, and Redpanda integration
 - [x] **Email Services** - SMTP and Mailgun support with worker integration
 - [x] **Storage Support** - Local, AWS S3, S3-Compatible (MinIO), Google Cloud Storage
+- [x] **gRPC & Protocol Buffers** - Full gRPC support with dual HTTP/gRPC handlers
+- [x] **Proto Generation** - Automated script for generating protobuf code
 
 ### In Progress 🚧
 
 - [ ] Unit Tests (Priority: High)
+- [ ] Integration Tests for gRPC endpoints
 
 ### Planned 📋
-- [ ] gRPC & Protocol Buffers support
+
 - [ ] WebSocket integration
 - [ ] OpenTelemetry integration for distributed tracing
+- [ ] API documentation generation (Swagger/OpenAPI for REST, reflection for gRPC)
 
 ## Contributing
 
@@ -332,9 +384,11 @@ For detailed documentation, see [Technical Documentation](docs/TECHNICAL_DOCUMEN
 2. Use feature flags for new components
 3. Implement both PostgreSQL and MongoDB repositories when applicable
 4. Add migrations for database schema changes
-5. Update documentation for significant changes
-6. **Run dependency linter before committing**: `go run cmd/lint-deps/main.go`
+5. **Run dependency linter before committing**: `make deps-check`
+6. **Generate protobuf code after .proto changes**: `make proto` or `make proto-<module>`
 7. Use ACL pattern for cross-module communication
+8. Place `.proto` files in `domain/proto/v1/` directory
+9. Update documentation for significant changes
 
 ## License
 

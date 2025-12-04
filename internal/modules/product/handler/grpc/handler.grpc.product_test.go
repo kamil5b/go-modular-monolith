@@ -7,7 +7,7 @@ import (
 	"time"
 
 	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto"
+	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
 )
 
 // MockProductService is a mock implementation of productDomain.Service
