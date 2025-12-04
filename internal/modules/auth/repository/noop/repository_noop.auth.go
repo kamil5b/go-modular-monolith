@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
 )
 
 var ErrNotImplemented = errors.New("auth repository not implemented")

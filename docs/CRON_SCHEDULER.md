@@ -23,9 +23,9 @@ import (
 	"context"
 	"log"
 
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-	infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/redpanda"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+	infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/redpanda"
 )
 
 func main() {
@@ -62,8 +62,8 @@ import (
 	"fmt"
 	"log"
 
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/redpanda"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/redpanda"
 )
 
 func main() {
@@ -100,7 +100,7 @@ func main() {
 ## Cron Expression Examples
 
 ```go
-import sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+import sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 
 // Every minute
 sharedworker.EveryMinute()
@@ -123,7 +123,7 @@ sharedworker.Monthly(15, 9, 0)
 ### Default Retry Policy
 
 ```go
-import infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
+import infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
 
 policy := infraworker.DefaultRetryPolicy()
 // MaxRetries: 3
@@ -136,7 +136,7 @@ policy := infraworker.DefaultRetryPolicy()
 ### Custom Retry Policy
 
 ```go
-import infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
+import infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
 
 server.SetRetryPolicy(infraworker.RetryPolicy{
 	MaxRetries:         5,

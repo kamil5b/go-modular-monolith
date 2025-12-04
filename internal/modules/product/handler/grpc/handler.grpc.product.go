@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/adapters"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
-	grpcAdapter "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/adapters"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
+	grpcAdapter "github.com/kamil5b/go-pste-monolith/internal/transports/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	storagepkg "github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	storagepkg "github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"

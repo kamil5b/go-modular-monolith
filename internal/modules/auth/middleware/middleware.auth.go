@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 )
 
 type AuthType string

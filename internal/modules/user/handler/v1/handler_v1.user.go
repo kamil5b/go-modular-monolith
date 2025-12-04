@@ -3,8 +3,8 @@ package v1
 import (
 	"net/http"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 )
 
 type Handler struct {

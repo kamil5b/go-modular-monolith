@@ -1,7 +1,7 @@
 package gin
 
 import (
-	transportHTTP "github.com/kamil5b/go-ptse-monolith/internal/transports/http"
+	transportHTTP "github.com/kamil5b/go-pste-monolith/internal/transports/http"
 
 	"github.com/gin-gonic/gin"
 )

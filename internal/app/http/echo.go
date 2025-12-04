@@ -1,10 +1,10 @@
 package http
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 
-	transportEcho "github.com/kamil5b/go-ptse-monolith/internal/transports/http/echo"
+	transportEcho "github.com/kamil5b/go-pste-monolith/internal/transports/http/echo"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

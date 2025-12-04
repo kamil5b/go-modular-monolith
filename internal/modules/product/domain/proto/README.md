@@ -22,8 +22,8 @@ bash scripts/generate-proto.sh
 protoc \
   --go_out=../../../.. \
   --go-grpc_out=../../../.. \
-  --go_opt=module=github.com/kamil5b/go-ptse-monolith \
-  --go-grpc_opt=module=github.com/kamil5b/go-ptse-monolith \
+  --go_opt=module=github.com/kamil5b/go-pste-monolith \
+  --go-grpc_opt=module=github.com/kamil5b/go-pste-monolith \
   -I. \
   v1/product.proto
 ```

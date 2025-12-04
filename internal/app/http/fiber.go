@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
-	transportFiber "github.com/kamil5b/go-ptse-monolith/internal/transports/http/fiber"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
+	transportFiber "github.com/kamil5b/go-pste-monolith/internal/transports/http/fiber"
 
 	"github.com/gofiber/fiber/v2"
 )

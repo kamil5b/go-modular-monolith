@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // TaskRegistry holds a collection of task registrations

@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	worker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	worker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // MockModuleWorkerProvider is a mock of ModuleWorkerProvider interface.

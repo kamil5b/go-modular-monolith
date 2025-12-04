@@ -1,11 +1,11 @@
 package http
 
 import (
-	authdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/middleware"
-	productdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/transports/http"
+	authdomain "github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/middleware"
+	productdomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/transports/http"
 )
 
 // MiddlewareFunc is a generic middleware function type

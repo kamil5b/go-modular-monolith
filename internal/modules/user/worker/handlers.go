@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	logger "github.com/kamil5b/go-ptse-monolith/internal/logger"
-	userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/email"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	logger "github.com/kamil5b/go-pste-monolith/internal/logger"
+	userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/email"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // UserWorkerHandler processes user-related tasks

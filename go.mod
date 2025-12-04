@@ -1,4 +1,4 @@
-module github.com/kamil5b/go-ptse-monolith
+module github.com/kamil5b/go-pste-monolith
 
 go 1.24.7
 

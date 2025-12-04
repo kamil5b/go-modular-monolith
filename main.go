@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kamil5b/go-ptse-monolith/cmd/bootstrap"
+	"github.com/kamil5b/go-pste-monolith/cmd/bootstrap"
 )
 
 func main() {

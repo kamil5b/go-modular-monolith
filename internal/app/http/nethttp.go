@@ -3,9 +3,9 @@ package http
 import (
 	"net/http"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
-	transportNet "github.com/kamil5b/go-ptse-monolith/internal/transports/http/nethttp"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
+	transportNet "github.com/kamil5b/go-pste-monolith/internal/transports/http/nethttp"
 
 	"github.com/gorilla/mux"
 )

@@ -8,7 +8,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"

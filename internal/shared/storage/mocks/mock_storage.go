@@ -11,7 +11,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	storage "github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 )
 
 // MockStorageService is a mock of StorageService interface.

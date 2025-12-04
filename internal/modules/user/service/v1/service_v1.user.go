@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/cache"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/email"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/events"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/cache"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/email"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/events"
 )
 
 const (

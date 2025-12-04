@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	events "github.com/kamil5b/go-ptse-monolith/internal/shared/events"
+	events "github.com/kamil5b/go-pste-monolith/internal/shared/events"
 )
 
 // MockEvent is a mock of Event interface.

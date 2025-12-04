@@ -1,9 +1,9 @@
 package worker
 
 import (
-	infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-	logger "github.com/kamil5b/go-ptse-monolith/internal/logger"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+	logger "github.com/kamil5b/go-pste-monolith/internal/logger"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // ModuleWorkerProvider defines the interface for modules to provide worker tasks

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package product.v1;
 
-option go_package = "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto;productv1";
+option go_package = "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto;productv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";

@@ -7,13 +7,14 @@
 package productv1
 
 import (
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
 )
 
 const (
@@ -568,7 +569,7 @@ const file_v1_product_proto_rawDesc = "" +
 	"\x03Get\x12\x1d.product.v1.GetProductRequest\x1a\x1e.product.v1.GetProductResponse\x12?\n" +
 	"\x04List\x12\x16.google.protobuf.Empty\x1a\x1f.product.v1.ListProductResponse\x12M\n" +
 	"\x06Update\x12 .product.v1.UpdateProductRequest\x1a!.product.v1.UpdateProductResponse\x12B\n" +
-	"\x06Delete\x12 .product.v1.DeleteProductRequest\x1a\x16.google.protobuf.EmptyBNZLgithub.com/kamil5b/go-ptse-monolith/internal/modules/product/proto;productv1b\x06proto3"
+	"\x06Delete\x12 .product.v1.DeleteProductRequest\x1a\x16.google.protobuf.EmptyBNZLgithub.com/kamil5b/go-pste-monolith/internal/modules/product/proto;productv1b\x06proto3"
 
 var (
 	file_v1_product_proto_rawDescOnce sync.Once

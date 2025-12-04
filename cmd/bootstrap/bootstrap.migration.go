@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	logger "github.com/kamil5b/go-ptse-monolith/internal/logger"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	logger "github.com/kamil5b/go-pste-monolith/internal/logger"
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"

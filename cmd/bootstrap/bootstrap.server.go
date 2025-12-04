@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	appHttp "github.com/kamil5b/go-ptse-monolith/internal/app/http"
-	infraMongo "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/db/mongo"
-	infraSQL "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/db/sql"
-	logger "github.com/kamil5b/go-ptse-monolith/internal/logger"
-	productGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
-	grpctransport "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	appHttp "github.com/kamil5b/go-pste-monolith/internal/app/http"
+	infraMongo "github.com/kamil5b/go-pste-monolith/internal/infrastructure/db/mongo"
+	infraSQL "github.com/kamil5b/go-pste-monolith/internal/infrastructure/db/sql"
+	logger "github.com/kamil5b/go-pste-monolith/internal/logger"
+	productGRPC "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/grpc"
+	grpctransport "github.com/kamil5b/go-pste-monolith/internal/transports/grpc"
 
 	"github.com/valyala/fasthttp"
 )

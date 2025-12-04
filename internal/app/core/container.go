@@ -4,62 +4,62 @@ import (
 	// Shared packages
 	"context"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/cache"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/email"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/events"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/uow"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/cache"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/email"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/events"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/uow"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 
 	// Worker infrastructure
-	infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-	asynqworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/asynq"
-	rabbitmqworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/rabbitmq"
-	redpandaworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/redpanda"
+	infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+	asynqworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/asynq"
+	rabbitmqworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/rabbitmq"
+	redpandaworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/redpanda"
 
 	// Email infrastructure
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/email/mailgun"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/email/smtp"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/email/mailgun"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/email/smtp"
 
 	// Storage infrastructure
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/gcs"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/local"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/noop"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/s3"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/gcs"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/local"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/noop"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/s3"
 
 	// Product module
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	handlerGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
-	handlerUnimplemented "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/noop"
-	handlerV1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/v1"
-	repoMongo "github.com/kamil5b/go-ptse-monolith/internal/modules/product/repository/mongo"
-	repoSQL "github.com/kamil5b/go-ptse-monolith/internal/modules/product/repository/sql"
-	serviceUnimplemented "github.com/kamil5b/go-ptse-monolith/internal/modules/product/service/noop"
-	serviceV1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/service/v1"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	handlerGRPC "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/grpc"
+	handlerUnimplemented "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/noop"
+	handlerV1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/v1"
+	repoMongo "github.com/kamil5b/go-pste-monolith/internal/modules/product/repository/mongo"
+	repoSQL "github.com/kamil5b/go-pste-monolith/internal/modules/product/repository/sql"
+	serviceUnimplemented "github.com/kamil5b/go-pste-monolith/internal/modules/product/service/noop"
+	serviceV1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/service/v1"
 
 	// User module
-	userDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	handlerV1User "github.com/kamil5b/go-ptse-monolith/internal/modules/user/handler/v1"
-	repoSQLUser "github.com/kamil5b/go-ptse-monolith/internal/modules/user/repository/sql"
-	serviceV1User "github.com/kamil5b/go-ptse-monolith/internal/modules/user/service/v1"
+	userDomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	handlerV1User "github.com/kamil5b/go-pste-monolith/internal/modules/user/handler/v1"
+	repoSQLUser "github.com/kamil5b/go-pste-monolith/internal/modules/user/repository/sql"
+	serviceV1User "github.com/kamil5b/go-pste-monolith/internal/modules/user/service/v1"
 
 	// Auth module
-	authACL "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/acl"
-	authDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
-	handlerNoopAuth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/handler/noop"
-	handlerV1Auth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/handler/v1"
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/middleware"
-	repoMongoAuth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/repository/mongo"
-	repoNoopAuth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/repository/noop"
-	repoSQLAuth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/repository/sql"
-	serviceNoopAuth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/service/noop"
-	serviceV1Auth "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/service/v1"
+	authACL "github.com/kamil5b/go-pste-monolith/internal/modules/auth/acl"
+	authDomain "github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
+	handlerNoopAuth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/handler/noop"
+	handlerV1Auth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/handler/v1"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/middleware"
+	repoMongoAuth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/repository/mongo"
+	repoNoopAuth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/repository/noop"
+	repoSQLAuth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/repository/sql"
+	serviceNoopAuth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/service/noop"
+	serviceV1Auth "github.com/kamil5b/go-pste-monolith/internal/modules/auth/service/v1"
 
 	// Unit of Work
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/unitofwork"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/unitofwork"
 
 	// Infrastructure
-	infracache "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/cache"
+	infracache "github.com/kamil5b/go-pste-monolith/internal/infrastructure/cache"
 
 	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/mongo"

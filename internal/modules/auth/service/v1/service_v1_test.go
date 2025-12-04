@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain/mocks"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain/mocks"
 )
 
 // contextKey is a custom context key type

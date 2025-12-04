@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
 	grpc "google.golang.org/grpc"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )

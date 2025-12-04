@@ -3,7 +3,7 @@ package noop
 import (
 	"net/http"
 
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 )
 
 type NoopHandler struct{}

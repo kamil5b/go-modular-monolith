@@ -1,9 +1,9 @@
 package worker
 
 import (
-	userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-	sharedemail "github.com/kamil5b/go-ptse-monolith/internal/shared/email"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+	sharedemail "github.com/kamil5b/go-pste-monolith/internal/shared/email"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // TaskDefinition defines a task that the module provides

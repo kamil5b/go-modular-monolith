@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	mockdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain/mocks"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	mockdomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain/mocks"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
 
 	gomock "github.com/golang/mock/gomock"
 )

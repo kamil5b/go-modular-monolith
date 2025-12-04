@@ -1,10 +1,10 @@
 package http
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 
-	transportGin "github.com/kamil5b/go-ptse-monolith/internal/transports/http/gin"
+	transportGin "github.com/kamil5b/go-pste-monolith/internal/transports/http/gin"
 
 	"github.com/gin-gonic/gin"
 )

@@ -156,7 +156,7 @@ Routes → Handlers → Services → Repositories → Database
 ## Project Structure
 
 ```
-github.com/kamil5b/go-ptse-monolith/
+github.com/kamil5b/go-pste-monolith/
 ├── main.go                          # Application entry point
 ├── go.mod                           # Go module definition
 ├── config/
@@ -360,8 +360,8 @@ github.com/kamil5b/go-ptse-monolith/
 
 ```bash
 # Clone the repository
-git clone https://github.com/kamil5b/go-ptse-monolith.git
-cd go-ptse-monolith
+git clone https://github.com/kamil5b/go-pste-monolith.git
+cd go-pste-monolith
 
 # Install dependencies
 go mod tidy
@@ -1030,7 +1030,7 @@ type UserCreator interface {
 package acl
 
 import (
-    userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
+    userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
 )
 
 // UserCreatorAdapter adapts the user repository to auth's UserCreator interface
@@ -1061,7 +1061,7 @@ func (a *UserCreatorAdapter) CreateUser(ctx context.Context, name, email string)
 ```go
 // internal/app/core/container.go
 import (
-    authacl "github.com/kamil5b/go-ptse-monolith/internal/modules/auth/acl"
+    authacl "github.com/kamil5b/go-pste-monolith/internal/modules/auth/acl"
 )
 
 // Create ACL adapter
@@ -1124,7 +1124,7 @@ go run cmd/lint-deps/main.go
 ✅ Checking dependencies...
 
 ❌ Violation in internal/modules/auth/service/v1/service_v1.auth.go:
-   - Imports "github.com/kamil5b/go-ptse-monolith/internal/modules/user/repository/sql"
+   - Imports "github.com/kamil5b/go-pste-monolith/internal/modules/user/repository/sql"
    - Module "auth" should not import from module "user"
 
 Fix: Use an ACL adapter or events for cross-module communication.
@@ -1153,7 +1153,7 @@ The linter automatically:
 All modules use `sharedctx.Context` from the shared kernel for framework-agnostic HTTP handling:
 
 ```go
-import sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+import sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 
 type ProductHandler interface {
     Create(c sharedctx.Context) error
@@ -1530,7 +1530,7 @@ package worker
 import (
     "context"
     "encoding/json"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 const (
@@ -1571,8 +1571,8 @@ import (
     "context"
     "encoding/json"
     "fmt"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-    userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+    userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
 )
 
 type UserWorkerHandler struct {
@@ -1648,8 +1648,8 @@ import (
     "fmt"
     
     "github.com/hibiken/asynq"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-    "github.com/kamil5b/go-ptse-monolith/internal/shared/context/logger"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+    "github.com/kamil5b/go-pste-monolith/internal/shared/context/logger"
 )
 
 type AsynqServer struct {
@@ -1713,7 +1713,7 @@ import (
     "time"
     
     "github.com/hibiken/asynq"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 type AsynqClient struct {
@@ -1780,7 +1780,7 @@ import (
     "time"
     
     amqp "github.com/rabbitmq/amqp091-go"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 type RabbitMQClient struct {
@@ -1876,7 +1876,7 @@ import (
     "time"
     
     "github.com/segmentio/kafka-go"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 type RedpandaClient struct {
@@ -1939,9 +1939,9 @@ package servicev1
 
 import (
     "context"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-    userdomain "github.com/kamil5b/go-ptse-monolith/internal/modules/user/domain"
-    userworker "github.com/kamil5b/go-ptse-monolith/internal/modules/user/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+    userdomain "github.com/kamil5b/go-pste-monolith/internal/modules/user/domain"
+    userworker "github.com/kamil5b/go-pste-monolith/internal/modules/user/worker"
 )
 
 type UserService struct {
@@ -2002,12 +2002,12 @@ func (s *UserService) Create(ctx context.Context, req *userdomain.CreateUserRequ
 package core
 
 import (
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
-    asynqworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/asynq"
-    rabbitmqworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/rabbitmq"
-    redpandaworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker/redpanda"
-    infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-    userworker "github.com/kamil5b/go-ptse-monolith/internal/modules/user/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
+    asynqworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/asynq"
+    rabbitmqworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/rabbitmq"
+    redpandaworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker/redpanda"
+    infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+    userworker "github.com/kamil5b/go-pste-monolith/internal/modules/user/worker"
 )
 
 func buildWorkerClient(config Config, featureFlags FeatureFlags) (sharedworker.Client, error) {
@@ -2251,7 +2251,7 @@ syntax = "proto3";
 
 package product.v1;
 
-option go_package = "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1;productv1";
+option go_package = "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1;productv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
@@ -2355,8 +2355,8 @@ Converters translate between domain models and protobuf messages:
 package adapters
 
 import (
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -2423,10 +2423,10 @@ package grpc
 import (
 	"context"
 
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/adapters"
-	grpcAdapter "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/adapters"
+	grpcAdapter "github.com/kamil5b/go-pste-monolith/internal/transports/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -2565,7 +2565,7 @@ func (s *Server) Stop() {
 ```go
 // internal/app/core/container.go
 import (
-	productGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
+	productGRPC "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/grpc"
 )
 
 type Container struct {
@@ -2591,8 +2591,8 @@ func NewContainer(/* params */) *Container {
 ```go
 // cmd/bootstrap/bootstrap.server.go
 import (
-	productGRPC "github.com/kamil5b/go-ptse-monolith/internal/modules/product/handler/grpc"
-	grpctransport "github.com/kamil5b/go-ptse-monolith/internal/transports/grpc"
+	productGRPC "github.com/kamil5b/go-pste-monolith/internal/modules/product/handler/grpc"
+	grpctransport "github.com/kamil5b/go-pste-monolith/internal/transports/grpc"
 )
 
 func Server() error {
@@ -2666,7 +2666,7 @@ import (
 	"context"
 	"log"
 
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -3043,8 +3043,8 @@ package worker
 
 import (
     "context"
-    "github.com/kamil5b/go-ptse-monolith/internal/shared/email"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    "github.com/kamil5b/go-pste-monolith/internal/shared/email"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 type UserWorkerHandler struct {
@@ -3312,7 +3312,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 )
 
 type LocalStorageConfig struct {
@@ -3437,7 +3437,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 )
 
 type S3StorageConfig struct {
@@ -3615,7 +3615,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
-	storagepkg "github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	storagepkg "github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 )
 
 type GCSStorageConfig struct {
@@ -3816,8 +3816,8 @@ Storage services can be injected into handlers and services for file upload/down
 package handlerv1
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
 )
 
 type ProductHandler struct {
@@ -3882,10 +3882,10 @@ func (h *ProductHandler) GetProductImage(c sharedctx.Context) error {
 package core
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/local"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/s3"
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/storage/gcs"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/storage"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/local"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/s3"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/storage/gcs"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/storage"
 )
 
 func buildStorageService(config Config, featureFlags FeatureFlags) (storage.StorageService, error) {

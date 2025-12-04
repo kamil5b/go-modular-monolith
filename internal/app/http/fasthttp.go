@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/kamil5b/go-ptse-monolith/internal/app/core"
-	sharedctx "github.com/kamil5b/go-ptse-monolith/internal/shared/context"
-	transportFast "github.com/kamil5b/go-ptse-monolith/internal/transports/http/fasthttp"
+	"github.com/kamil5b/go-pste-monolith/internal/app/core"
+	sharedctx "github.com/kamil5b/go-pste-monolith/internal/shared/context"
+	transportFast "github.com/kamil5b/go-pste-monolith/internal/transports/http/fasthttp"
 
 	fasthttprouter "github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"

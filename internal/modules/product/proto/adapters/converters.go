@@ -1,8 +1,8 @@
 package adapters
 
 import (
-	productDomain "github.com/kamil5b/go-ptse-monolith/internal/modules/product/domain"
-	productv1 "github.com/kamil5b/go-ptse-monolith/internal/modules/product/proto/v1"
+	productDomain "github.com/kamil5b/go-pste-monolith/internal/modules/product/domain"
+	productv1 "github.com/kamil5b/go-pste-monolith/internal/modules/product/proto/v1"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 

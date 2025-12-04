@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	infraworker "github.com/kamil5b/go-ptse-monolith/internal/infrastructure/worker"
-	sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	infraworker "github.com/kamil5b/go-pste-monolith/internal/infrastructure/worker"
+	sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 
 	"github.com/segmentio/kafka-go"
 )

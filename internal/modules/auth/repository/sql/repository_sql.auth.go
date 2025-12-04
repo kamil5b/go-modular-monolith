@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/modules/auth/domain"
+	"github.com/kamil5b/go-pste-monolith/internal/modules/auth/domain"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"

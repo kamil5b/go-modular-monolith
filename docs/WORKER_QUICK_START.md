@@ -164,7 +164,7 @@ package worker
 
 import (
     "context"
-    sharedworker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+    sharedworker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 type MyModuleHandler struct {
@@ -186,8 +186,8 @@ File: `internal/modules/mymodule/worker/registrar.go`
 package worker
 
 import (
-    "github.com/kamil5b/go-ptse-monolith/internal/app/core"
-    appworker "github.com/kamil5b/go-ptse-monolith/internal/app/worker"
+    "github.com/kamil5b/go-pste-monolith/internal/app/core"
+    appworker "github.com/kamil5b/go-pste-monolith/internal/app/worker"
 )
 
 type MyModuleRegistrar struct{}

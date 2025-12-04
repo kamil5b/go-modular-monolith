@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	worker "github.com/kamil5b/go-ptse-monolith/internal/shared/worker"
+	worker "github.com/kamil5b/go-pste-monolith/internal/shared/worker"
 )
 
 // MockOption is a mock of Option interface.

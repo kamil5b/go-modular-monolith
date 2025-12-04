@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/email"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/email"
 
 	"github.com/mailgun/mailgun-go/v4"
 )

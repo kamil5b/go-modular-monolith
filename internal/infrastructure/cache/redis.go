@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	sharedcache "github.com/kamil5b/go-ptse-monolith/internal/shared/cache"
+	sharedcache "github.com/kamil5b/go-pste-monolith/internal/shared/cache"
 
 	"github.com/redis/go-redis/v9"
 )

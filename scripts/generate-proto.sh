@@ -62,8 +62,8 @@ for MODULE_DIR in "$MODULES_DIR"/*; do
         protoc \
             --go_out="$REPO_ROOT" \
             --go-grpc_out="$REPO_ROOT" \
-            --go_opt=module=github.com/kamil5b/go-ptse-monolith \
-            --go-grpc_opt=module=github.com/kamil5b/go-ptse-monolith \
+            --go_opt=module=github.com/kamil5b/go-pste-monolith \
+            --go-grpc_opt=module=github.com/kamil5b/go-pste-monolith \
             -I"$PROTO_DIR" \
             "$PROTO_FILE"
         

@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kamil5b/go-ptse-monolith/internal/infrastructure/email/template"
-	"github.com/kamil5b/go-ptse-monolith/internal/shared/email"
+	"github.com/kamil5b/go-pste-monolith/internal/infrastructure/email/template"
+	"github.com/kamil5b/go-pste-monolith/internal/shared/email"
 )
 
 // SMTPConfig holds SMTP configuration

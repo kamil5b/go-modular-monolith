@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	email "github.com/kamil5b/go-ptse-monolith/internal/shared/email"
+	email "github.com/kamil5b/go-pste-monolith/internal/shared/email"
 )
 
 // MockEmailService is a mock of EmailService interface.
