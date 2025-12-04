@@ -67,9 +67,11 @@ func (b *InMemoryEventBus) Unsubscribe(eventName string, handler EventHandler) {
 	}
 
 	// Find and remove the handler
+	// Note: Function pointer comparison has limitations in Go.
+	// For production systems requiring dynamic handler unsubscription,
+	// consider refactoring to use handler IDs/names or a message broker
+	// (Kafka, RabbitMQ, Redpanda) for event distribution.
 	for i := range handlers {
-		// Compare function pointers (this has limitations in Go)
-		// In production, consider using handler IDs instead
 		if &handlers[i] == &handler {
 			b.handlers[eventName] = append(handlers[:i], handlers[i+1:]...)
 			return

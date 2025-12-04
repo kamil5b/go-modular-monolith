@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"go-modular-monolith/internal/infrastructure/email/template"
 	"go-modular-monolith/internal/shared/email"
 )
 
@@ -22,15 +23,36 @@ type SMTPConfig struct {
 
 // SMTPEmailService sends emails via SMTP
 type SMTPEmailService struct {
-	config SMTPConfig
-	addr   string
+	config         SMTPConfig
+	addr           string
+	templateLoader *template.TemplateLoader
 }
 
-// NewSMTPEmailService creates a new SMTP email service
+// NewSMTPEmailService creates a new SMTP email service with template support
 func NewSMTPEmailService(config SMTPConfig) *SMTPEmailService {
+	loader := template.NewTemplateLoader()
+
+	// Register default templates
+	_ = loader.RegisterTemplate(
+		"welcome",
+		"Welcome {{.name}}!",
+		`<h1>Welcome {{.name}}!</h1><p>Thank you for joining us.</p>`,
+		`Welcome {{.name}}!\n\nThank you for joining us.`,
+		[]string{"name"},
+	)
+
+	_ = loader.RegisterTemplate(
+		"password_reset",
+		"Password Reset Request",
+		`<h1>Reset Your Password</h1><p><a href="{{.reset_link}}">Click here</a> to reset your password.</p>`,
+		`Reset Your Password\n\nClick the link: {{.reset_link}}`,
+		[]string{"reset_link"},
+	)
+
 	return &SMTPEmailService{
-		config: config,
-		addr:   fmt.Sprintf("%s:%d", config.Host, config.Port),
+		config:         config,
+		addr:           fmt.Sprintf("%s:%d", config.Host, config.Port),
+		templateLoader: loader,
 	}
 }
 
@@ -81,22 +103,32 @@ func (s *SMTPEmailService) SendBatch(ctx context.Context, emails []*email.Email)
 	return nil
 }
 
-// SendTemplate sends an email using a template (basic implementation)
+// SendTemplate sends an email using a registered template
 func (s *SMTPEmailService) SendTemplate(ctx context.Context, to []string, templateID string, data map[string]interface{}) error {
 	if len(to) == 0 {
 		return fmt.Errorf("recipients cannot be empty")
 	}
 
-	// In production, you'd load template from template engine
-	// For now, create a basic email
+	// Render template using the template loader
+	subject, htmlBody, textBody, err := s.templateLoader.RenderTemplate(templateID, data)
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
 	e := &email.Email{
 		To:       to,
 		From:     s.config.FromAddr,
-		Subject:  fmt.Sprintf("Email from template: %s", templateID),
-		TextBody: fmt.Sprintf("Template %s with data: %v", templateID, data),
+		Subject:  subject,
+		HTMLBody: htmlBody,
+		TextBody: textBody,
 	}
 
 	return s.Send(ctx, e)
+}
+
+// RegisterTemplate allows registering custom email templates at runtime
+func (s *SMTPEmailService) RegisterTemplate(name, subject, htmlBody, textBody string, requiredKeys []string) error {
+	return s.templateLoader.RegisterTemplate(name, subject, htmlBody, textBody, requiredKeys)
 }
 
 // ValidateEmail validates email format

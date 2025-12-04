@@ -256,10 +256,23 @@ func (s *GCSStorageService) GetPresignedURL(
 	path string,
 	expiration time.Duration,
 ) (string, error) {
-	// GCS requires special setup for presigned URLs with a signing method
-	// For now, return public URL format
-	// In production, implement with service account signing
-	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.config.Bucket, path), nil
+	// Generate presigned URL using service account signing
+	// This requires a service account with appropriate permissions
+	opts := &storage.SignedURLOptions{
+		Method:  "GET",
+		Expires: time.Now().Add(expiration),
+	}
+
+	// For this to work, ensure:
+	// 1. Service account key is available (from CredentialsFile or CredentialsJSON)
+	// 2. Service account has "iam.serviceAccountUser" and "iam.serviceAccountTokenCreator" roles
+	// 3. The bucket is not publicly accessible (enforce this via bucket policy)
+	url, err := storage.SignedURL(s.config.Bucket, path, opts)
+	if err != nil {
+		return "", storagepkg.ServiceError("failed to generate presigned URL", err)
+	}
+
+	return url, nil
 }
 
 // Copy copies an object within storage

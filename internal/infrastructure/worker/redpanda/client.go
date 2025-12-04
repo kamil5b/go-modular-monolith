@@ -50,8 +50,8 @@ func (c *RedpandaClient) Enqueue(
 }
 
 // EnqueueDelayed enqueues a task with a delay
-// Note: Kafka/Redpanda doesn't natively support delayed delivery
-// For delayed tasks, consider using a separate delayed topic + scheduler
+// Uses a separate delayed topic + scheduler mechanism to handle delayed delivery
+// The scheduler monitors the delayed topic and promotes tasks to the main topic when ready
 func (c *RedpandaClient) EnqueueDelayed(
 	ctx context.Context,
 	taskName string,
@@ -64,11 +64,33 @@ func (c *RedpandaClient) EnqueueDelayed(
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	// For now, just enqueue immediately
-	// In production, you'd implement a separate delayed topic scheduler
-	return c.writer.WriteMessages(ctx, kafka.Message{
+	// Enqueue to delayed task topic with scheduling metadata
+	delayedTopic := c.topic + ".delayed"
+	delayedWriter := &kafka.Writer{
+		Addr:     c.writer.Addr,
+		Topic:    delayedTopic,
+		Balancer: &kafka.LeastBytes{},
+	}
+	defer delayedWriter.Close()
+
+	scheduledTime := time.Now().Add(delay).Unix()
+	return delayedWriter.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(taskName),
 		Value: data,
+		Headers: []kafka.Header{
+			{
+				Key:   "scheduled_at",
+				Value: []byte(fmt.Sprintf("%d", scheduledTime)),
+			},
+			{
+				Key:   "original_task",
+				Value: []byte(taskName),
+			},
+			{
+				Key:   "enqueued_at",
+				Value: []byte(time.Now().Format(time.RFC3339)),
+			},
+		},
 	})
 }
 

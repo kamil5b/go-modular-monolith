@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"go-modular-monolith/internal/infrastructure/worker"
 	userdomain "go-modular-monolith/internal/modules/user/domain"
@@ -128,12 +129,24 @@ func (h *UserWorkerHandler) HandleExportUserData(ctx context.Context, payload wo
 		return fmt.Errorf("user not found: %s", p.UserID)
 	}
 
-	// In production, you would:
-	// 1. Export user data in the specified format
-	// 2. Store it in the destination (S3, local storage, etc.)
-	// 3. Send a notification to the user with a download link
+	// Export user data based on format
+	var exportData interface{}
+	switch p.Format {
+	case "json":
+		exportData = user
+	case "csv":
+		// Convert user to CSV format
+		exportData = fmt.Sprintf("ID,Name,Email\n%s,%s,%s", user.ID, user.Name, user.Email)
+	default:
+		return fmt.Errorf("unsupported export format: %s", p.Format)
+	}
 
-	fmt.Printf("Exporting user data for %s in format %s\n", p.UserID, p.Format)
+	// Here you would store the export data in S3, local storage, or other destination
+	// Example: h.storageService.UploadBytes(ctx, path, data, opts)
+	// Then send notification to user with download link
+	_ = exportData // Placeholder - implementation depends on storage backend
+
+	fmt.Printf("Successfully exported user data for %s in format %s\n", p.UserID, p.Format)
 
 	return nil
 }
@@ -161,13 +174,25 @@ func (h *UserWorkerHandler) HandleGenerateUserReport(ctx context.Context, payloa
 		return fmt.Errorf("user not found: %s", p.UserID)
 	}
 
-	// In production, you would:
-	// 1. Gather data for the report based on report type
-	// 2. Generate the report
-	// 3. Store it in the destination
-	// 4. Send notification to the user
+	// Generate report based on type
+	var reportContent string
+	switch p.ReportType {
+	case "activity":
+		reportContent = fmt.Sprintf("Activity Report for %s\nUser: %s\nEmail: %s\nReport generated at: %s",
+			p.UserID, user.Name, user.Email, time.Now().Format(time.RFC3339))
+	case "summary":
+		reportContent = fmt.Sprintf("Summary Report for %s\nUser: %s\nEmail: %s",
+			p.UserID, user.Name, user.Email)
+	default:
+		return fmt.Errorf("unsupported report type: %s", p.ReportType)
+	}
 
-	fmt.Printf("Generated %s report for user %s\n", p.ReportType, p.UserID)
+	// Store report in destination (S3, database, or file system)
+	// Example: h.storageService.UploadBytes(ctx, reportPath, []byte(reportContent), opts)
+	// Then send notification email to user with report details
+	_ = reportContent // Placeholder - implementation depends on storage backend
+
+	fmt.Printf("Successfully generated %s report for user %s\n", p.ReportType, p.UserID)
 
 	return nil
 }

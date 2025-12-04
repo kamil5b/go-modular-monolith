@@ -90,11 +90,17 @@ func (c *RabbitMQClient) EnqueueDelayed(
 	delay time.Duration,
 	options ...worker.Option,
 ) error {
-	// For now, just enqueue immediately
-	// In production, you'd want to use the delayed message plugin
+	// Use RabbitMQ Delayed Message Plugin for delayed delivery
+	// Plugin: https://github.com/rabbitmq/rabbitmq-delayed-message-exchange
+	// Install with: rabbitmq-plugins enable rabbitmq_delayed_message_exchange
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Set x-delay header in milliseconds
+	headers := amqp.Table{
+		"x-delay": int64(delay.Milliseconds()),
 	}
 
 	return c.channel.PublishWithContext(
@@ -107,6 +113,7 @@ func (c *RabbitMQClient) EnqueueDelayed(
 			ContentType:  "application/json",
 			DeliveryMode: amqp.Persistent,
 			Body:         data,
+			Headers:      headers,
 		},
 	)
 }
