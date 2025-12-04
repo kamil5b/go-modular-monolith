@@ -193,7 +193,7 @@ func NewContainer(
 	// service
 	switch featureFlag.Service.Product {
 	case "v1":
-		productService = serviceV1.NewServiceV1(productRepository, unitOfWork, eventBus)
+		productService = serviceV1.NewServiceV1(productRepository, unitOfWork, eventBus, cacheInstance)
 	default:
 		productService = serviceUnimplemented.NewUnimplementedService()
 	}
@@ -216,7 +216,7 @@ func NewContainer(
 	// user service
 	switch featureFlag.Service.User {
 	case "v1":
-		userService = serviceV1User.NewServiceV1(userRepository, eventBus, emailService)
+		userService = serviceV1User.NewServiceV1(userRepository, eventBus, emailService, cacheInstance)
 	default:
 	}
 

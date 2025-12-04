@@ -3,6 +3,7 @@ package s3
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -255,7 +256,7 @@ func (s *S3StorageService) DeletePrefix(ctx context.Context, prefix string) erro
 		}
 
 		// Delete objects
-		if page.Contents != nil && len(page.Contents) > 0 {
+		if len(page.Contents) > 0 {
 			objectIdentifiers := make([]types.ObjectIdentifier, len(page.Contents))
 			for i, obj := range page.Contents {
 				objectIdentifiers[i] = types.ObjectIdentifier{
@@ -288,7 +289,7 @@ func (s *S3StorageService) Exists(ctx context.Context, path string) (bool, error
 	if err != nil {
 		// Check if it's a "not found" error
 		var nfe *types.NotFound
-		if nfe != nil {
+		if errors.As(err, &nfe) {
 			return false, nil
 		}
 		return false, storage.ServiceError("failed to check if object exists", err)

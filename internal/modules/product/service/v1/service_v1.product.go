@@ -2,22 +2,30 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"go-modular-monolith/internal/modules/product/domain"
+	"go-modular-monolith/internal/shared/cache"
 	"go-modular-monolith/internal/shared/events"
 	"go-modular-monolith/internal/shared/uow"
+)
+
+const (
+	productCacheKeyPrefix = "product:"
+	productCacheTTL       = 15 * time.Minute
 )
 
 type ServiceV1 struct {
 	repo     domain.Repository
 	uow      uow.UnitOfWork
 	eventBus events.EventBus
+	cache    cache.Cache
 }
 
-func NewServiceV1(r domain.Repository, u uow.UnitOfWork, eb events.EventBus) *ServiceV1 {
-	return &ServiceV1{repo: r, uow: u, eventBus: eb}
+func NewServiceV1(r domain.Repository, u uow.UnitOfWork, eb events.EventBus, c cache.Cache) *ServiceV1 {
+	return &ServiceV1{repo: r, uow: u, eventBus: eb, cache: c}
 }
 
 func (s *ServiceV1) Create(ctx context.Context, req *domain.CreateProductRequest, createdBy string) (product *domain.Product, err error) {
@@ -61,7 +69,32 @@ func (s *ServiceV1) Create(ctx context.Context, req *domain.CreateProductRequest
 	return
 }
 func (s *ServiceV1) Get(ctx context.Context, id string) (*domain.Product, error) {
-	return s.repo.GetByID(ctx, id)
+	// Try to get from cache first
+	if s.cache != nil {
+		cacheKey := productCacheKeyPrefix + id
+		if cached, err := s.cache.GetBytes(ctx, cacheKey); err == nil {
+			var product domain.Product
+			if err := json.Unmarshal(cached, &product); err == nil {
+				return &product, nil
+			}
+		}
+	}
+
+	// Cache miss - fetch from repository
+	product, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache for future requests
+	if s.cache != nil && product != nil {
+		cacheKey := productCacheKeyPrefix + id
+		if data, err := json.Marshal(product); err == nil {
+			_ = s.cache.Set(ctx, cacheKey, data, productCacheTTL)
+		}
+	}
+
+	return product, nil
 }
 func (s *ServiceV1) List(ctx context.Context) ([]domain.Product, error) {
 	return s.repo.List(ctx)
@@ -100,6 +133,12 @@ func (s *ServiceV1) Update(ctx context.Context, req *domain.UpdateProductRequest
 		return nil, err
 	}
 
+	// Invalidate cache after update
+	if s.cache != nil {
+		cacheKey := productCacheKeyPrefix + p.ID
+		_ = s.cache.Delete(ctx, cacheKey)
+	}
+
 	// Publish event for inter-module communication
 	if s.eventBus != nil {
 		_ = s.eventBus.Publish(ctx, domain.ProductUpdatedEvent{
@@ -133,6 +172,12 @@ func (s *ServiceV1) Delete(ctx context.Context, id, by string) (err error) {
 	err = s.repo.SoftDelete(ctx, id, by)
 	if err != nil {
 		return err
+	}
+
+	// Invalidate cache after delete
+	if s.cache != nil {
+		cacheKey := productCacheKeyPrefix + id
+		_ = s.cache.Delete(ctx, cacheKey)
 	}
 
 	// Publish event for inter-module communication
